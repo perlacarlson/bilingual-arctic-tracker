@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bilingual Artic Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Bilingual Artic Tracker</h1>
+    <p id="target-word">Current Target: <strong id="word-display">ratón</strong></p>
+  </header>
+
+  <main>
+    <section class="metrics">
+      <div class="card">
+        <span class="label">Total Trials</span>
+        <span class="value" id="total-count">0</span>
+      </div>
+      <div class="card">
+        <span class="label">Overall Accuracy</span>
+        <span class="value" id="overall-acc">0%</span>
+      </div>
+      <div class="card">
+        <span class="label">Independent Mastery</span>
+        <span class="value" id="ind-acc">0%</span>
+      </div>
+    </section>
+
+    <section class="buttons-grid">
+      <button class="btn btn-ind" onclick="logTrial('ind')">+ Independent</button>
+      <button class="btn btn-low" onclick="logTrial('low')">+ Low Cue</button>
+      <button class="btn btn-mod" onclick="logTrial('mod')">+ Mod Cue</button>
+      <button class="btn btn-max" onclick="logTrial('max')">+ Max Cue</button>
+      <button class="btn btn-err" onclick="logTrial('err')">- Incorrect</button>
+    </section>
+
+    <section class="controls">
+      <button class="btn-secondary" onclick="undoLast()">Undo Last</button>
+      <button class="btn-secondary" onclick="resetSession()">Reset Session</button>
+    </section>
+
+    <section class="documentation">
+      <h3>Generated SOAP Objective Note:</h3>
+      <textarea id="soap-output" readonly rows="4"></textarea>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
