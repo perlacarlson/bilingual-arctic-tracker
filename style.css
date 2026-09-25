@@ -427,3 +427,47 @@ header h1 {
   color: #475569;
   cursor: pointer;
 }
+/* --- Session Metadata Bar --- */
+.session-meta-bar {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.meta-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.meta-field label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.meta-field input {
+  flex: 1;
+  max-width: 180px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  outline: none;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.meta-field input:focus {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
+}
