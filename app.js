@@ -337,6 +337,98 @@ function handleKeyboardShortcuts(e) {
       prevWord();
       break;
   }
+
+// --- CLINICAL CSV EXPORT ENGINE ---
+function exportToCSV() {
+  if (sessionTrials.length === 0) {
+    alert("No trials logged in this session to export.");
+    return;
+  }
+
+  // Clinical label mappings for clean documentation
+  const cueLabels = {
+    ind: "Independent",
+    low: "Low / Minimal Cue",
+    mod: "Moderate Cue",
+    max: "Maximal Cue",
+    err: "Incorrect / Error"
+  };
+
+  // 1. Define CSV Column Headers
+  const headers = [
+    "Trial #",
+    "Timestamp (ISO)",
+    "Time (Local)",
+    "Target Stimulus",
+    "Cue Level",
+    "Scoring Result",
+    "Numeric Accuracy (0/1)"
+  ];
+
+  // 2. Format trial rows
+  const rows = sessionTrials.map((t, index) => {
+    const trialDate = new Date(t.timestamp);
+    const localTime = trialDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    
+    // Sanitize any quotes or commas in word names
+    const cleanWord = `"${t.word.replace(/"/g, '""')}"`;
+    const cleanCue = `"${cueLabels[t.cueLevel] || t.cueLevel}"`;
+    const resultText = t.isCorrect ? "Correct" : "Incorrect";
+    const binaryScore = t.isCorrect ? 1 : 0;
+
+    return [
+      index + 1,
+      t.timestamp,
+      `"${localTime}"`,
+      cleanWord,
+      cleanCue,
+      resultText,
+      binaryScore
+    ].join(",");
+  });
+
+  // 3. Add Session Summary Header at the top
+  const total = sessionTrials.length;
+  const correctTotal = sessionTrials.filter(t => t.isCorrect).length;
+  const indTotal = sessionTrials.filter(t => t.cueLevel === 'ind').length;
+  const overallPct = Math.round((correctTotal / total) * 100);
+  const indPct = Math.round((indTotal / total) * 100);
+
+  const summaryRows = [
+    `# BILINGUAL ARTICULATION & PHONOLOGY TRIAL LOG`,
+    `# Session Date,${new Date().toLocaleDateString()}`,
+    `# Total Trials,${total}`,
+    `# Overall Accuracy,${overallPct}% (${correctTotal}/${total})`,
+    `# Independent Mastery,${indPct}% (${indTotal}/${total})`,
+    `#` // Blank spacer line
+  ];
+
+  // 4. Combine with UTF-8 BOM (\uFEFF) to preserve Spanish characters in Excel
+  const csvContent = "\uFEFF" + [
+    summaryRows.join("\n"),
+    headers.join(","),
+    rows.join("\n")
+  ].join("\n");
+
+  // 5. Generate ISO-based timestamp for filename (e.g., Artic_Trials_2026-09-25_143022.csv)
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10);
+  const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, "-");
+  const fileName = `Artic_Trials_${dateStr}_${timeStr}.csv`;
+
+  // 6. Trigger Browser File Download
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  
+  link.setAttribute("href", url);
+  link.setAttribute("download", fileName);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
 }
 
 window.addEventListener("DOMContentLoaded", init);

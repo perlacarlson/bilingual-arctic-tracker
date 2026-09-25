@@ -135,10 +135,11 @@ header h1 {
 }
 
 /* Secondary Action Controls */
+
 .controls {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
   margin-bottom: 24px;
 }
 
