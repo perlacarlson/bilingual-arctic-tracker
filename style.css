@@ -192,3 +192,237 @@ header h1 {
   resize: none;
   user-select: text;
 }
+/* --- Target Word Navigation Banner --- */
+.active-target-banner {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-top: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.banner-label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.target-word-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 4px 0;
+}
+
+#word-display {
+  font-size: 1.45rem;
+  color: #0284c7;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+}
+
+.nav-arrow-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.tap-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* --- Collapsible Deck Manager Drawer --- */
+.deck-manager {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+
+.drawer-toggle {
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  background: #f8fafc;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.drawer-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.drawer-content {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.section-subheading {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+/* Preset Pills */
+.preset-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill-btn {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.pill-btn:active {
+  background: #dbeafe;
+}
+
+/* Inputs & Form Controls */
+.input-inline {
+  display: flex;
+  gap: 8px;
+}
+
+.input-inline input,
+.drawer-content textarea {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+}
+
+.drawer-content textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.btn-action {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.btn-full {
+  width: 100%;
+  margin-top: 6px;
+}
+
+/* Active Target Chip List */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.text-danger-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.target-word-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-top: 6px;
+}
+
+.word-chip {
+  display: inline-flex;
+  align-items: center;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  color: #334155;
+  cursor: pointer;
+}
+
+.word-chip.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0369a1;
+  font-weight: 700;
+}
+
+.word-chip .chip-delete {
+  margin-left: 6px;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.word-chip .chip-delete:hover {
+  opacity: 1;
+}
+
+/* Documentation Copy Header */
+.doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.copy-btn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}

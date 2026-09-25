@@ -1,17 +1,40 @@
-// --- BILINGUAL SOUND TARGETS ---
-const DEFAULT_TARGETS = [
-  "ratón (initial /r/)",
-  "rana (initial /r/)",
-  "perro (medial /r/)",
-  "casa (initial /k/)",
-  "taza (initial /t/)",
-  "sapo (initial /s/)",
-  "sol (coda /l/)",
-  "flor (cluster /fl/)"
-];
+// --- CLINICAL PRESETS FOR BILINGUAL SPANISH ---
+const PRESETS = {
+  vibrante_multiple: [
+    "ratón (initial /r/)",
+    "rana (initial /r/)",
+    "reloj (initial /r/)",
+    "perro (medial /r/)",
+    "carro (medial /r/)",
+    "torre (medial /r/)"
+  ],
+  vibrante_simple: [
+    "pera (intervocalic /ɾ/)",
+    "cara (intervocalic /ɾ/)",
+    "toro (intervocalic /ɾ/)",
+    "brazo (cluster /bɾ/)",
+    "tren (cluster /tɾ/)",
+    "fruta (cluster /fɾ/)"
+  ],
+  velar_fronting: [
+    "casa vs taza (/k/ vs /t/)",
+    "capa vs tapa (/k/ vs /t/)",
+    "coro vs toro (/k/ vs /t/)",
+    "boca vs bota (/k/ vs /t/)",
+    "cola vs tola (/k/ vs /t/)"
+  ],
+  coda_s: [
+    "pasto (medial coda /s/)",
+    "mosca (medial coda /s/)",
+    "estrella (medial coda /s/)",
+    "dos (final coda /s/)",
+    "lápiz (final coda /s/)",
+    "manos (final coda /s/)"
+  ]
+};
 
-// --- APPLICATION STATE ---
-let targetWords = [...DEFAULT_TARGETS];
+// --- APP STATE ---
+let targetWords = [];
 let currentWordIndex = 0;
 let sessionTrials = [];
 
@@ -21,64 +44,187 @@ const totalCountEl = document.getElementById("total-count");
 const overallAccEl = document.getElementById("overall-acc");
 const indAccEl = document.getElementById("ind-acc");
 const soapOutputEl = document.getElementById("soap-output");
+const targetListEl = document.getElementById("target-list");
+const targetCountBadgeEl = document.getElementById("target-count-badge");
+const newWordInputEl = document.getElementById("new-word-input");
+const bulkWordsInputEl = document.getElementById("bulk-words-input");
 
 // --- INITIALIZATION ---
 function init() {
-  loadFromStorage();
+  loadWordsFromStorage();
+  loadTrialsFromStorage();
+  
+  if (targetWords.length === 0) {
+    targetWords = [...PRESETS.vibrante_multiple];
+    saveWordsToStorage();
+  }
+
+  renderWordBank();
   updateTargetWordDisplay();
   calculateAndRender();
 
-  // Allow clicking target word to cycle through list
+  // Allow clicking target word on banner to cycle
   wordDisplayEl.addEventListener("click", cycleNextWord);
 
-  // Keyboard accessibility for desktop / external iPad keyboards
+  // Enter key trigger for single input
+  newWordInputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") addSingleWord();
+  });
+
+  // Global fast-keys
   window.addEventListener("keydown", handleKeyboardShortcuts);
+}
+
+// --- WORD BANK MANAGEMENT ---
+function renderWordBank() {
+  targetListEl.innerHTML = "";
+  targetCountBadgeEl.textContent = targetWords.length;
+
+  targetWords.forEach((word, index) => {
+    const chip = document.createElement("li");
+    chip.className = `word-chip ${index === currentWordIndex ? "active" : ""}`;
+    
+    const wordText = document.createElement("span");
+    wordText.textContent = word;
+    wordText.onclick = () => selectWord(index);
+
+    const deleteBtn = document.createElement("span");
+    deleteBtn.className = "chip-delete";
+    deleteBtn.innerHTML = "&times;";
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteWord(index);
+    };
+
+    chip.appendChild(wordText);
+    chip.appendChild(deleteBtn);
+    targetListEl.appendChild(chip);
+  });
+}
+
+function selectWord(index) {
+  currentWordIndex = index;
+  updateTargetWordDisplay();
+  renderWordBank();
+}
+
+function cycleNextWord() {
+  if (targetWords.length === 0) return;
+  currentWordIndex = (currentWordIndex + 1) % targetWords.length;
+  updateTargetWordDisplay();
+  renderWordBank();
+}
+
+function prevWord() {
+  if (targetWords.length === 0) return;
+  currentWordIndex = (currentWordIndex - 1 + targetWords.length) % targetWords.length;
+  updateTargetWordDisplay();
+  renderWordBank();
+}
+
+function updateTargetWordDisplay() {
+  if (targetWords.length === 0) {
+    wordDisplayEl.textContent = "(No targets in deck)";
+  } else {
+    wordDisplayEl.textContent = targetWords[currentWordIndex];
+  }
+}
+
+function addSingleWord() {
+  const val = newWordInputEl.value.trim();
+  if (!val) return;
+  targetWords.push(val);
+  newWordInputEl.value = "";
+  saveWordsToStorage();
+  renderWordBank();
+  if (targetWords.length === 1) selectWord(0);
+}
+
+function addBulkWords() {
+  const raw = bulkWordsInputEl.value;
+  if (!raw.trim()) return;
+
+  // Split by comma or newline
+  const entries = raw
+    .split(/[\n,]+/)
+    .map(w => w.trim())
+    .filter(w => w.length > 0);
+
+  if (entries.length > 0) {
+    targetWords.push(...entries);
+    bulkWordsInputEl.value = "";
+    saveWordsToStorage();
+    renderWordBank();
+  }
+}
+
+function deleteWord(index) {
+  targetWords.splice(index, 1);
+  if (currentWordIndex >= targetWords.length) {
+    currentWordIndex = Math.max(0, targetWords.length - 1);
+  }
+  saveWordsToStorage();
+  updateTargetWordDisplay();
+  renderWordBank();
+}
+
+function clearAllWords() {
+  if (!confirm("Are you sure you want to clear all targets from this sound deck?")) return;
+  targetWords = [];
+  currentWordIndex = 0;
+  saveWordsToStorage();
+  updateTargetWordDisplay();
+  renderWordBank();
+}
+
+function loadPreset(presetKey) {
+  if (!PRESETS[presetKey]) return;
+  targetWords = [...PRESETS[presetKey]];
+  currentWordIndex = 0;
+  saveWordsToStorage();
+  updateTargetWordDisplay();
+  renderWordBank();
 }
 
 // --- LOGGING ENGINE ---
 function logTrial(cueLevel) {
+  if (targetWords.length === 0) {
+    alert("Please add at least one target word to the sound deck before logging trials.");
+    return;
+  }
+
   const currentWord = targetWords[currentWordIndex];
   
   const trialRecord = {
     id: Date.now(),
     word: currentWord,
-    cueLevel: cueLevel, // 'ind', 'low', 'mod', 'max', 'err'
+    cueLevel: cueLevel,
     isCorrect: cueLevel !== 'err',
     timestamp: new Date().toISOString()
   };
 
   sessionTrials.push(trialRecord);
-  saveToStorage();
+  saveTrialsToStorage();
   calculateAndRender();
 }
 
 function undoLast() {
   if (sessionTrials.length === 0) return;
   sessionTrials.pop();
-  saveToStorage();
+  saveTrialsToStorage();
   calculateAndRender();
 }
 
 function resetSession() {
   if (sessionTrials.length === 0) return;
-  const confirmClear = confirm("Are you sure you want to reset this session data?");
-  if (confirmClear) {
+  if (confirm("Reset current session data?")) {
     sessionTrials = [];
-    saveToStorage();
+    saveTrialsToStorage();
     calculateAndRender();
   }
 }
 
-function cycleNextWord() {
-  currentWordIndex = (currentWordIndex + 1) % targetWords.length;
-  updateTargetWordDisplay();
-}
-
-function updateTargetWordDisplay() {
-  wordDisplayEl.textContent = targetWords[currentWordIndex];
-}
-
-// --- CLINICAL METRICS & SOAP GENERATION ---
+// --- SOAP NOTE CALCULATION & EXPORT ---
 function calculateAndRender() {
   const total = sessionTrials.length;
 
@@ -90,7 +236,6 @@ function calculateAndRender() {
     return;
   }
 
-  // Count instances across cue hierarchy
   let indCount = 0;
   let lowCount = 0;
   let modCount = 0;
@@ -111,57 +256,69 @@ function calculateAndRender() {
   const overallAccPct = Math.round((correctTotal / total) * 100);
   const indAccPct = Math.round((indCount / total) * 100);
 
-  // Update UI Counters
   totalCountEl.textContent = total;
   overallAccEl.textContent = `${overallAccPct}%`;
   indAccEl.textContent = `${indAccPct}%`;
 
-  // Aggregate item-level accuracy
+  // Itemized breakdown
   const wordSummaryMap = {};
   sessionTrials.forEach(t => {
     if (!wordSummaryMap[t.word]) {
-      wordSummaryMap[t.word] = { total: 0, correct: 0 };
+      wordSummaryMap[t.word] = { total: 0, correct: 0, ind: 0 };
     }
     wordSummaryMap[t.word].total++;
     if (t.isCorrect) wordSummaryMap[t.word].correct++;
+    if (t.cueLevel === 'ind') wordSummaryMap[t.word].ind++;
   });
 
   const stimulusDetails = Object.keys(wordSummaryMap)
-    .map(w => `${w}: ${wordSummaryMap[w].correct}/${wordSummaryMap[w].total} (${Math.round((wordSummaryMap[w].correct / wordSummaryMap[w].total) * 100)}%)`)
-    .join(", ");
+    .map(w => `${w}: ${wordSummaryMap[w].correct}/${wordSummaryMap[w].total} (${Math.round((wordSummaryMap[w].correct / wordSummaryMap[w].total) * 100)}%, Ind: ${wordSummaryMap[w].ind})`)
+    .join("; ");
 
-  // Compile Objective (O) Statement formatted for clinical EHR
-  const soapString = `Objective: Client participated in ${total} articulation trials across structured speech activities. Overall stimulus accuracy was ${overallAccPct}% (${correctTotal}/${total}), with ${indAccPct}% independent mastery (${indCount}/${total}). Cueing breakdown: Independent: ${indCount} (${Math.round((indCount / total) * 100)}%), Low/Min: ${lowCount} (${Math.round((lowCount / total) * 100)}%), Moderate: ${modCount} (${Math.round((modCount / total) * 100)}%), Maximal: ${maxCount} (${Math.round((maxCount / total) * 100)}%), Incorrect: ${errCount} (${Math.round((errCount / total) * 100)}%). Target accuracy breakdown: ${stimulusDetails}.`;
+  const soapString = `Objective: Client completed ${total} articulation/phonology trials targeting bilingual speech goals. Overall stimulus accuracy: ${overallAccPct}% (${correctTotal}/${total}), with ${indAccPct}% independent mastery (${indCount}/${total}). Cue Hierarchy: Independent: ${indCount} (${Math.round((indCount / total) * 100)}%), Low/Min: ${lowCount} (${Math.round((lowCount / total) * 100)}%), Moderate: ${modCount} (${Math.round((modCount / total) * 100)}%), Maximal: ${maxCount} (${Math.round((maxCount / total) * 100)}%), Errors: ${errCount} (${Math.round((errCount / total) * 100)}%). Target Breakdown: ${stimulusDetails}.`;
 
   soapOutputEl.value = soapString;
 }
 
-// --- LOCAL STORAGE PERSISTENCE ---
-function saveToStorage() {
+function copySoapNote() {
+  if (sessionTrials.length === 0) return;
+  navigator.clipboard.writeText(soapOutputEl.value).then(() => {
+    alert("SOAP Objective note copied to clipboard!");
+  });
+}
+
+// --- STORAGE PERSISTENCE ---
+function saveWordsToStorage() {
+  localStorage.setItem("artic_custom_deck", JSON.stringify(targetWords));
+}
+
+function loadWordsFromStorage() {
   try {
-    localStorage.setItem("artic_tracker_trials", JSON.stringify(sessionTrials));
+    const cached = localStorage.getItem("artic_custom_deck");
+    if (cached) targetWords = JSON.parse(cached);
   } catch (e) {
-    console.warn("Storage quota exceeded or private mode enabled.", e);
+    targetWords = [];
   }
 }
 
-function loadFromStorage() {
+function saveTrialsToStorage() {
+  localStorage.setItem("artic_tracker_trials", JSON.stringify(sessionTrials));
+}
+
+function loadTrialsFromStorage() {
   try {
     const cached = localStorage.getItem("artic_tracker_trials");
-    if (cached) {
-      sessionTrials = JSON.parse(cached);
-    }
+    if (cached) sessionTrials = JSON.parse(cached);
   } catch (e) {
     sessionTrials = [];
   }
 }
 
-// --- HARDWARE FAST-KEYS ---
-function handleKeyboardShortcuts(event) {
-  // Prevent shortcut firing when interacting with text inputs
-  if (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA") return;
+// --- KEYBOARD ACCESSIBILITY ---
+function handleKeyboardShortcuts(e) {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
 
-  switch (event.key) {
+  switch (e.key) {
     case "1": logTrial("ind"); break;
     case "2": logTrial("low"); break;
     case "3": logTrial("mod"); break;
@@ -172,11 +329,14 @@ function handleKeyboardShortcuts(event) {
     case "U": undoLast(); break;
     case " ":
     case "ArrowRight":
-      event.preventDefault();
+      e.preventDefault();
       cycleNextWord();
+      break;
+    case "ArrowLeft":
+      e.preventDefault();
+      prevWord();
       break;
   }
 }
 
-// Launch application
 window.addEventListener("DOMContentLoaded", init);

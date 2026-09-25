@@ -9,25 +9,80 @@
 <body>
   <header>
     <h1>Bilingual Artic Tracker</h1>
-    <p id="target-word">Current Target: <strong id="word-display">ratón</strong></p>
+    <div class="active-target-banner">
+      <span class="banner-label">Current Target</span>
+      <div class="target-word-row">
+        <button class="nav-arrow-btn" onclick="prevWord()" aria-label="Previous Word">◀</button>
+        <strong id="word-display">ratón</strong>
+        <button class="nav-arrow-btn" onclick="cycleNextWord()" aria-label="Next Word">▶</button>
+      </div>
+      <small class="tap-hint">Tap word or arrows to cycle targets</small>
+    </div>
   </header>
 
   <main>
+    <!-- Collapsible Word Bank Manager -->
+    <details class="deck-manager" id="deck-drawer">
+      <summary class="drawer-toggle">⚙️ Manage Target Word Bank (<span id="target-count-badge">0</span>)</summary>
+      
+      <div class="drawer-content">
+        <!-- Bilingual Clinical Presets -->
+        <div class="manager-subgroup">
+          <label class="section-subheading">Bilingual Spanish Presets</label>
+          <div class="preset-pill-group">
+            <button class="pill-btn" onclick="loadPreset('vibrante_multiple')">Trill /r/ (Múltiple)</button>
+            <button class="pill-btn" onclick="loadPreset('vibrante_simple')">Tap /ɾ/ (Simple)</button>
+            <button class="pill-btn" onclick="loadPreset('velar_fronting')">Velar Contrast (/k/ vs /t/)</button>
+            <button class="pill-btn" onclick="loadPreset('coda_s')">Coda /s/ Retention</button>
+          </div>
+        </div>
+
+        <!-- Add Custom Word Entry -->
+        <div class="manager-subgroup">
+          <label class="section-subheading" for="new-word-input">Add Single Target</label>
+          <div class="input-inline">
+            <input type="text" id="new-word-input" placeholder="e.g., ferrocarril, plátano" enterkeyhint="done">
+            <button class="btn-action" onclick="addSingleWord()">+ Add</button>
+          </div>
+        </div>
+
+        <!-- Bulk Import Option -->
+        <div class="manager-subgroup">
+          <label class="section-subheading" for="bulk-words-input">Bulk Add (Comma or newline separated)</label>
+          <textarea id="bulk-words-input" rows="2" placeholder="perro, carro, torre, correr"></textarea>
+          <button class="btn-action btn-full" onclick="addBulkWords()">Import Bulk Targets</button>
+        </div>
+
+        <!-- Current Target List & Clear -->
+        <div class="manager-subgroup">
+          <div class="list-header">
+            <label class="section-subheading">Active Sound Deck</label>
+            <button class="text-danger-btn" onclick="clearAllWords()">Clear Deck</button>
+          </div>
+          <ul id="target-list" class="target-word-list">
+            <!-- Dynamic word chips render here -->
+          </ul>
+        </div>
+      </div>
+    </details>
+
+    <!-- Metrics Dashboard -->
     <section class="metrics">
       <div class="card">
         <span class="label">Total Trials</span>
         <span class="value" id="total-count">0</span>
       </div>
       <div class="card">
-        <span class="label">Overall Accuracy</span>
+        <span class="label">Overall Acc</span>
         <span class="value" id="overall-acc">0%</span>
       </div>
       <div class="card">
-        <span class="label">Independent Mastery</span>
+        <span class="label">Ind Mastery</span>
         <span class="value" id="ind-acc">0%</span>
       </div>
     </section>
 
+    <!-- Rapid Tactical Trial Buttons -->
     <section class="buttons-grid">
       <button class="btn btn-ind" onclick="logTrial('ind')">+ Independent</button>
       <button class="btn btn-low" onclick="logTrial('low')">+ Low Cue</button>
@@ -36,13 +91,18 @@
       <button class="btn btn-err" onclick="logTrial('err')">- Incorrect</button>
     </section>
 
+    <!-- Quick Utilities -->
     <section class="controls">
-      <button class="btn-secondary" onclick="undoLast()">Undo Last</button>
+      <button class="btn-secondary" onclick="undoLast()">Undo Last (U)</button>
       <button class="btn-secondary" onclick="resetSession()">Reset Session</button>
     </section>
 
+    <!-- Automated Clinical Note -->
     <section class="documentation">
-      <h3>Generated SOAP Objective Note:</h3>
+      <div class="doc-header">
+        <h3>Generated SOAP Objective Note</h3>
+        <button class="copy-btn" onclick="copySoapNote()">📋 Copy Note</button>
+      </div>
       <textarea id="soap-output" readonly rows="4"></textarea>
     </section>
   </main>
