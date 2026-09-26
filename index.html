@@ -9,68 +9,83 @@
 <body>
   <header>
     <h1>Bilingual Artic Tracker</h1>
+    
+    <!-- Active Target & Rapid On-the-Fly Switcher -->
     <div class="active-target-banner">
-      <span class="banner-label">Current Target</span>
+      <div class="banner-top-row">
+        <span class="banner-label">Active Stimulus / Sound</span>
+        <button class="text-link-btn" onclick="setGenericTargetPrompt()">+ Set Sound Only</button>
+      </div>
       <div class="target-word-row">
         <button class="nav-arrow-btn" onclick="prevWord()" aria-label="Previous Word">◀</button>
-        <strong id="word-display">ratón</strong>
+        <input 
+          type="text" 
+          id="active-target-input" 
+          value="ratón (initial /r/)" 
+          placeholder="Type sound or word..." 
+          autocomplete="off"
+          spellcheck="false"
+        >
         <button class="nav-arrow-btn" onclick="cycleNextWord()" aria-label="Next Word">▶</button>
       </div>
-      <small class="tap-hint">Tap word or arrows to cycle targets</small>
+      <small class="tap-hint">Tap text to edit on the fly, or use arrows to cycle deck</small>
     </div>
   </header>
 
   <main>
     <!-- Collapsible Word Bank Manager -->
     <details class="deck-manager" id="deck-drawer">
-      <summary class="drawer-toggle">⚙️ Manage Target Word Bank (<span id="target-count-badge">0</span>)</summary>
+      <summary class="drawer-toggle">⚙️ Word Bank & Bilingual Presets (<span id="target-count-badge">0</span>)</summary>
       
       <div class="drawer-content">
-        <!-- Bilingual Clinical Presets -->
+        <!-- Generic Probe Presets -->
         <div class="manager-subgroup">
-          <label class="section-subheading">Bilingual Spanish Presets</label>
+          <label class="section-subheading">Rapid Probe Sounds (No Words Needed)</label>
           <div class="preset-pill-group">
-            <button class="pill-btn" onclick="loadPreset('vibrante_multiple')">Trill /r/ (Múltiple)</button>
-            <button class="pill-btn" onclick="loadPreset('vibrante_simple')">Tap /ɾ/ (Simple)</button>
-            <button class="pill-btn" onclick="loadPreset('velar_fronting')">Velar Contrast (/k/ vs /t/)</button>
-            <button class="pill-btn" onclick="loadPreset('coda_s')">Coda /s/ Retention</button>
+            <button class="pill-btn pill-generic" onclick="setDirectTarget('Target: Spanish /r/ (Múltiple)')">/r/ Múltiple</button>
+            <button class="pill-btn pill-generic" onclick="setDirectTarget('Target: Spanish /ɾ/ (Simple)')">/ɾ/ Simple</button>
+            <button class="pill-btn pill-generic" onclick="setDirectTarget('Target: Coda /s/')">Coda /s/</button>
+            <button class="pill-btn pill-generic" onclick="setDirectTarget('Target: Velar Fronting (/k/ vs /t/)')">Velars /k, ɡ/</button>
+            <button class="pill-btn pill-generic" onclick="setDirectTarget('Target: English Vocalic /r/')">Vocalic /r/</button>
+            <button class="pill-btn pill-generic" onclick="setDirectTarget('Target: General Artic Probe')">General Probe</button>
           </div>
         </div>
 
-        <!-- Add Custom Word Entry -->
+        <!-- Full Word Deck Presets -->
         <div class="manager-subgroup">
-          <label class="section-subheading" for="new-word-input">Add Single Target</label>
+          <label class="section-subheading">Structured Bilingual Word Lists</label>
+          <div class="preset-pill-group">
+            <button class="pill-btn" onclick="loadPreset('vibrante_multiple')">Trill /r/ List</button>
+            <button class="pill-btn" onclick="loadPreset('vibrante_simple')">Tap /ɾ/ List</button>
+            <button class="pill-btn" onclick="loadPreset('velar_fronting')">Velar Minimal Pairs</button>
+            <button class="pill-btn" onclick="loadPreset('coda_s')">Coda /s/ Words</button>
+          </div>
+        </div>
+
+        <!-- Custom Target Entry -->
+        <div class="manager-subgroup">
+          <label class="section-subheading" for="new-word-input">Add Word to Active Deck</label>
           <div class="input-inline">
             <input type="text" id="new-word-input" placeholder="e.g., ferrocarril, plátano" enterkeyhint="done">
             <button class="btn-action" onclick="addSingleWord()">+ Add</button>
           </div>
         </div>
 
-        <!-- Bulk Import Option -->
-        <div class="manager-subgroup">
-          <label class="section-subheading" for="bulk-words-input">Bulk Add (Comma or newline separated)</label>
-          <textarea id="bulk-words-input" rows="2" placeholder="perro, carro, torre, correr"></textarea>
-          <button class="btn-action btn-full" onclick="addBulkWords()">Import Bulk Targets</button>
-        </div>
-
-        <!-- Current Target List & Clear -->
+        <!-- Current Target Chips -->
         <div class="manager-subgroup">
           <div class="list-header">
-            <label class="section-subheading">Active Sound Deck</label>
+            <label class="section-subheading">Deck Items</label>
             <button class="text-danger-btn" onclick="clearAllWords()">Clear Deck</button>
           </div>
-          <ul id="target-list" class="target-word-list">
-            <!-- Dynamic word chips render here -->
-          </ul>
+          <ul id="target-list" class="target-word-list"></ul>
         </div>
       </div>
     </details>
 
-    <!-- Metrics Dashboard -->
-    <!-- Session Metadata / Client Code Bar -->
+    <!-- Session Metadata Bar -->
     <section class="session-meta-bar">
       <div class="meta-field">
-        <label for="client-id-input">Client ID / Initials (Optional):</label>
+        <label for="client-id-input">Client ID / Initials:</label>
         <input 
           type="text" 
           id="client-id-input" 
@@ -81,6 +96,8 @@
         >
       </div>
     </section>
+
+    <!-- Metrics Dashboard -->
     <section class="metrics">
       <div class="card">
         <span class="label">Total Trials</span>
@@ -104,20 +121,47 @@
       <button class="btn btn-max" onclick="logTrial('max')">+ Max Cue</button>
       <button class="btn btn-err" onclick="logTrial('err')">- Incorrect</button>
     </section>
-    
 
-    <!-- Quick Utilities -->
-   <section class="controls">
-  <button class="btn-secondary" onclick="undoLast()">Undo Last (U)</button>
-  <button class="btn-secondary" onclick="exportToCSV()">📥 Export CSV</button>
-  <button class="btn-secondary" onclick="resetSession()">Reset Session</button>
-</section>
+    <!-- Utilities / Export Controls -->
+    <section class="controls">
+      <button class="btn-secondary" onclick="undoLast()">Undo (U)</button>
+      <button class="btn-secondary btn-export" onclick="exportToCSV()">📥 Export CSV</button>
+      <button class="btn-secondary" onclick="resetSession()">Reset</button>
+    </section>
+
+    <!-- Live Trial History & Retroactive Editor -->
+    <section class="trial-history-section">
+      <div class="history-header">
+        <h3>Session Ledger (<span id="ledger-count">0</span> trials)</h3>
+        <small>Tap any word to edit retroactively</small>
+      </div>
+      <div class="trial-ledger-scroll">
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Stimulus / Target</th>
+              <th>Support Level</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="trial-ledger-body">
+            <tr>
+              <td colspan="4" class="empty-ledger-msg">No trials recorded yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <!-- Automated Clinical Note -->
     <section class="documentation">
       <div class="doc-header">
         <h3>Generated SOAP Objective Note</h3>
-        <button class="copy-btn" onclick="copySoapNote()">📋 Copy Note</button>
+        <div class="doc-actions">
+          <button class="copy-btn" onclick="copySoapNote()">📋 Copy Note</button>
+          <button class="copy-btn" onclick="copyRawCSV()">📋 Copy CSV Data</button>
+        </div>
       </div>
       <textarea id="soap-output" readonly rows="4"></textarea>
     </section>
