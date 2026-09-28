@@ -3,13 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Bilingual Artic & Phonology Tracker</title>
+  <title>Bilingual Multi-Goal Artic Tracker</title>
   
-  <!-- Web App Manifest & Browser Theme -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#0284c7">
-  
-  <!-- iOS Standalone / Full-Screen Optimization -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ArticTracker">
@@ -19,98 +16,73 @@
 </head>
 <body>
   <header>
-    <h1>Bilingual Artic Tracker</h1>
+    <h1>Bilingual Multi-Goal Tracker</h1>
     
-    <!-- Clinical Language Context Mode -->
+    <!-- Language Context Selector -->
     <div class="lang-selector-group">
-      <span class="selector-label">Language Context:</span>
+      <span class="selector-label">Language Mode:</span>
       <div class="segmented-control">
-        <button type="button" class="lang-btn active" id="btn-lang-es" onclick="setLanguageContext('Spanish Only')">Spanish Only</button>
-        <button type="button" class="lang-btn" id="btn-lang-en" onclick="setLanguageContext('English Only')">English Only</button>
-        <button type="button" class="lang-btn" id="btn-lang-bi" onclick="setLanguageContext('Bilingual (Both)')">Bilingual / Both</button>
+        <button type="button" class="lang-btn active" id="btn-lang-es" onclick="setLanguageContext('Spanish Only')">Spanish</button>
+        <button type="button" class="lang-btn" id="btn-lang-en" onclick="setLanguageContext('English Only')">English</button>
+        <button type="button" class="lang-btn" id="btn-lang-bi" onclick="setLanguageContext('Bilingual (Both)')">Bilingual</button>
       </div>
     </div>
 
-    <!-- Active Sound & Optional Word Banner -->
+    <!-- Active Goal Switching Tabs -->
+    <div class="goal-tabs-container">
+      <div class="tabs-header-row">
+        <span class="selector-label">Active Target Goal:</span>
+        <button type="button" class="text-link-btn" onclick="openGoalEditor()">+ Add/Edit Goals</button>
+      </div>
+      <div class="goal-tab-strip" id="goal-tab-strip">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+    </div>
+
+    <!-- Current Stimulus Card -->
     <div class="target-card">
       <div class="target-field-row">
         <div class="field-item">
-          <label for="target-sound-input">Target Sound / Phoneme</label>
-          <input 
-            type="text" 
-            id="target-sound-input" 
-            value="/r/ (Múltiple)" 
-            placeholder="e.g., /s/, /r/, /k/ vs /t/"
-            autocomplete="off"
-            spellcheck="false"
-          >
+          <label for="active-sound-display">Selected Target Sound</label>
+          <input type="text" id="active-sound-display" value="/r/ (Múltiple)" autocomplete="off">
         </div>
         <div class="field-item">
           <label for="target-word-input">Stimulus Word (Optional)</label>
-          <input 
-            type="text" 
-            id="target-word-input" 
-            placeholder="Leave blank for sound-only"
-            autocomplete="off"
-            spellcheck="false"
-          >
+          <input type="text" id="target-word-input" placeholder="e.g., ratón, perro" autocomplete="off">
         </div>
-      </div>
-      <div class="quick-sound-pills">
-        <span class="pill-label">Quick Sounds:</span>
-        <button type="button" class="sound-chip" onclick="quickSelectSound('/r/ (Múltiple)')">/r/ Múltiple</button>
-        <button type="button" class="sound-chip" onclick="quickSelectSound('/ɾ/ (Simple)')">/ɾ/ Simple</button>
-        <button type="button" class="sound-chip" onclick="quickSelectSound('Coda /s/')">Coda /s/</button>
-        <button type="button" class="sound-chip" onclick="quickSelectSound('/k/ vs /t/ (Velar Fronting)')">/k/ vs /t/</button>
-        <button type="button" class="sound-chip" onclick="quickSelectSound('English Vocalic /r/')">Vocalic /r/</button>
-        <button type="button" class="sound-chip" onclick="quickSelectSound('General Probe')">General Probe</button>
       </div>
     </div>
   </header>
 
   <main>
-    <!-- Session Parameters Bar (Client Code & Target Trial Goal) -->
+    <!-- Session Client Metadata Bar -->
     <section class="session-meta-grid">
       <div class="meta-field">
         <label for="client-id-input">Client ID / Code:</label>
-        <input 
-          type="text" 
-          id="client-id-input" 
-          placeholder="e.g., JR or #104" 
-          maxlength="12"
-          autocomplete="off"
-          spellcheck="false"
-        >
+        <input type="text" id="client-id-input" placeholder="e.g., JR or #104" maxlength="12" autocomplete="off">
       </div>
       <div class="meta-field">
-        <label for="target-trials-input">Target Trial Block:</label>
+        <label for="active-block-target">Goal Block Quota:</label>
         <div class="trial-block-input-wrap">
-          <input 
-            type="number" 
-            id="target-trials-input" 
-            value="20" 
-            min="1" 
-            max="500" 
-            step="5"
-          >
+          <input type="number" id="active-block-target" value="20" min="1" max="200" step="5" onchange="updateActiveGoalBlockTarget(this.value)">
           <span class="unit-label">trials</span>
         </div>
       </div>
     </section>
 
-    <!-- Trial Goal Progress Bar -->
+    <!-- Active Goal Progress Bar -->
     <div class="progress-bar-container">
       <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
     </div>
 
-    <!-- Metrics Dashboard -->
+    <!-- Real-Time Metrics for Currently Active Goal -->
     <section class="metrics">
       <div class="card">
-        <span class="label">Completed Trials</span>
+        <span class="label">Goal Trials</span>
         <span class="value" id="trial-count-display">0 / 20</span>
       </div>
       <div class="card">
-        <span class="label">Session Acc</span>
+        <span class="label">Goal Acc</span>
         <span class="value" id="overall-acc">0%</span>
       </div>
       <div class="card">
@@ -128,14 +100,24 @@
       <button type="button" class="btn btn-err" onclick="logTrial('err')">- Incorrect</button>
     </section>
 
-    <!-- Primary Control Strip -->
+    <!-- Primary Utility Controls -->
     <section class="controls">
       <button type="button" class="btn-secondary" onclick="undoLast()">Undo (U)</button>
       <button type="button" class="btn-secondary btn-export" onclick="exportToCSV()">📥 Export CSV</button>
       <button type="button" class="btn-secondary" onclick="resetSession()">Reset</button>
     </section>
 
-    <!-- Interactive Session Ledger (Live & Retroactive Editing) -->
+    <!-- Multi-Goal Overview Summary Cards -->
+    <section class="session-goals-overview" id="goals-overview-section">
+      <div class="history-header">
+        <h3>Session Goal Summary (All Targets)</h3>
+      </div>
+      <div class="goal-summary-cards" id="goal-summary-cards">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- Interactive Ledger -->
     <section class="trial-history-section">
       <div class="history-header">
         <h3>Session Ledger (<span id="ledger-count">0</span> trials)</h3>
@@ -146,10 +128,10 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>Target Sound</th>
-              <th>Word (Optional)</th>
-              <th>Lang</th>
-              <th>Support Level</th>
+              <th>Goal Tag</th>
+              <th>Sound</th>
+              <th>Word</th>
+              <th>Cue Level</th>
               <th></th>
             </tr>
           </thead>
@@ -162,7 +144,7 @@
       </div>
     </section>
 
-    <!-- Automated Clinical Note -->
+    <!-- Documentation -->
     <section class="documentation">
       <div class="doc-header">
         <h3>Generated SOAP Objective Note</h3>
@@ -171,22 +153,50 @@
           <button type="button" class="copy-btn" onclick="copyRawCSV()">📋 Copy CSV</button>
         </div>
       </div>
-      <textarea id="soap-output" readonly rows="4"></textarea>
+      <textarea id="soap-output" readonly rows="6"></textarea>
     </section>
   </main>
 
+  <!-- Modal Drawer: Goal Bank Manager -->
+  <dialog id="goal-modal" class="goal-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Session Goals & Multi-Sound Bank</h2>
+        <button type="button" class="close-modal-btn" onclick="closeGoalEditor()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="add-goal-form">
+          <label class="section-subheading">Create New Clinical Target / Goal</label>
+          <div class="form-row">
+            <input type="text" id="new-goal-title" placeholder="Target Sound (e.g., Initial /s/, Velar /k/)" required>
+          </div>
+          <div class="form-row">
+            <input type="text" id="new-goal-desc" placeholder="Goal Description (e.g., 80% accuracy in phrases with min cues)">
+          </div>
+          <div class="form-row-split">
+            <input type="number" id="new-goal-quota" value="20" placeholder="Block Goal (trials)">
+            <button type="button" class="btn-action" onclick="addNewGoal()">+ Add Goal to Session</button>
+          </div>
+        </div>
+
+        <div class="existing-goals-list">
+          <label class="section-subheading">Configured Targets for This Session</label>
+          <div id="modal-goals-container">
+            <!-- Dynamic goal list -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
   <script src="app.js"></script>
-<!-- Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js', { scope: './' })
-          .then((reg) => console.log('Offline SW registered successfully. Scope:', reg.scope))
-          .catch((err) => console.error('Service Worker registration failed:', err));
+        navigator.serviceWorker.register('./sw.js', { scope: './' });
       });
     }
   </script>
-</body>
-</html>
 </body>
 </html>

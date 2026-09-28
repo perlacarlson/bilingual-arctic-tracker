@@ -1,59 +1,220 @@
 /**
- * Bilingual Artic & Phonology Session Tracker
- * Full Support for Sound-Only Tracking, Dynamic Trial Blocks, & Language Modes
+ * Bilingual Artic Tracker: Multi-Goal Session Engine
+ * Built for Pediatric Clinic Sessions, PSU SOAP Documentation, & Longitudinal Reporting
  */
 
 // ==========================================
-// 1. STATE MANAGEMENT
+// 1. STATE & DEFAULT CLINICAL GOALS
 // ==========================================
+const DEFAULT_GOALS = [
+  {
+    id: "goal_r",
+    title: "/r/ Múltiple",
+    desc: "Produce vibrante múltiple /r/ in word-initial position with 80% accuracy",
+    blockQuota: 20
+  },
+  {
+    id: "goal_fronting",
+    title: "Velars /k, ɡ/ (Fronting)",
+    desc: "Suppress velar fronting in contrastive word pairs (/k/ vs /t/) with 75% accuracy",
+    blockQuota: 20
+  },
+  {
+    id: "goal_coda_s",
+    title: "Coda /s/ Retention",
+    desc: "Maintain coda /s/ in multisyllabic words with minimal gestural cues",
+    blockQuota: 15
+  }
+];
+
+let sessionGoals = [];
+let activeGoalId = "";
 let currentLanguage = "Spanish Only";
 let sessionTrials = [];
 
 // DOM References
-let targetSoundInputEl;
+let goalTabStripEl;
+let activeSoundDisplayEl;
 let targetWordInputEl;
 let clientIdInputEl;
-let targetTrialsInputEl;
+let activeBlockTargetEl;
 let progressBarFillEl;
 let trialCountDisplayEl;
 let overallAccEl;
 let indAccEl;
-let soapOutputEl;
+let goalSummaryCardsEl;
 let trialLedgerBodyEl;
 let ledgerCountEl;
+let soapOutputEl;
+let goalModalEl;
 
 // ==========================================
 // 2. INITIALIZATION
 // ==========================================
 function init() {
-  targetSoundInputEl = document.getElementById("target-sound-input");
+  goalTabStripEl = document.getElementById("goal-tab-strip");
+  activeSoundDisplayEl = document.getElementById("active-sound-display");
   targetWordInputEl = document.getElementById("target-word-input");
   clientIdInputEl = document.getElementById("client-id-input");
-  targetTrialsInputEl = document.getElementById("target-trials-input");
+  activeBlockTargetEl = document.getElementById("active-block-target");
   progressBarFillEl = document.getElementById("progress-bar-fill");
   trialCountDisplayEl = document.getElementById("trial-count-display");
   overallAccEl = document.getElementById("overall-acc");
   indAccEl = document.getElementById("ind-acc");
-  soapOutputEl = document.getElementById("soap-output");
+  goalSummaryCardsEl = document.getElementById("goal-summary-cards");
   trialLedgerBodyEl = document.getElementById("trial-ledger-body");
   ledgerCountEl = document.getElementById("ledger-count");
+  soapOutputEl = document.getElementById("soap-output");
+  goalModalEl = document.getElementById("goal-modal");
 
+  loadGoalsFromStorage();
   loadTrialsFromStorage();
   loadLanguageFromStorage();
 
+  if (sessionGoals.length === 0) {
+    sessionGoals = [...DEFAULT_GOALS];
+    saveGoalsToStorage();
+  }
+
+  if (!activeGoalId || !sessionGoals.some(g => g.id === activeGoalId)) {
+    activeGoalId = sessionGoals[0].id;
+  }
+
+  renderGoalTabs();
+  syncActiveGoalInputs();
   calculateAndRender();
   renderLedger();
 
-  // Listeners for dynamic updates
   if (clientIdInputEl) clientIdInputEl.addEventListener("input", calculateAndRender);
-  if (targetTrialsInputEl) targetTrialsInputEl.addEventListener("input", calculateAndRender);
-  if (targetSoundInputEl) targetSoundInputEl.addEventListener("input", calculateAndRender);
+  if (activeSoundDisplayEl) activeSoundDisplayEl.addEventListener("input", updateCurrentGoalSound);
 
   window.addEventListener("keydown", handleKeyboardShortcuts);
 }
 
 // ==========================================
-// 3. LANGUAGE MODE & QUICK SOUNDS
+// 3. GOAL MANAGEMENT & TAB SWITCHING
+// ==========================================
+function renderGoalTabs() {
+  if (!goalTabStripEl) return;
+  goalTabStripEl.innerHTML = "";
+
+  sessionGoals.forEach(goal => {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = `goal-tab ${goal.id === activeGoalId ? "active" : ""}`;
+    tab.textContent = goal.title;
+    tab.onclick = () => selectGoal(goal.id);
+    goalTabStripEl.appendChild(tab);
+  });
+}
+
+function selectGoal(goalId) {
+  activeGoalId = goalId;
+  renderGoalTabs();
+  syncActiveGoalInputs();
+  calculateAndRender();
+}
+
+function syncActiveGoalInputs() {
+  const goal = sessionGoals.find(g => g.id === activeGoalId);
+  if (!goal) return;
+
+  if (activeSoundDisplayEl) activeSoundDisplayEl.value = goal.title;
+  if (activeBlockTargetEl) activeBlockTargetEl.value = goal.blockQuota;
+}
+
+function updateActiveGoalBlockTarget(val) {
+  const goal = sessionGoals.find(g => g.id === activeGoalId);
+  if (goal) {
+    goal.blockQuota = parseInt(val, 10) || 20;
+    saveGoalsToStorage();
+    calculateAndRender();
+  }
+}
+
+function updateCurrentGoalSound(e) {
+  const goal = sessionGoals.find(g => g.id === activeGoalId);
+  if (goal) {
+    goal.title = e.target.value.trim() || "Sound Target";
+    saveGoalsToStorage();
+    renderGoalTabs();
+    calculateAndRender();
+  }
+}
+
+// Modal Management
+function openGoalEditor() {
+  renderModalGoalList();
+  if (goalModalEl) goalModalEl.showModal();
+}
+
+function closeGoalEditor() {
+  if (goalModalEl) goalModalEl.close();
+}
+
+function renderModalGoalList() {
+  const container = document.getElementById("modal-goals-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  sessionGoals.forEach((goal, index) => {
+    const item = document.createElement("div");
+    item.className = "modal-goal-item";
+    item.innerHTML = `
+      <div>
+        <strong style="color:#0284c7;">${goal.title}</strong> (${goal.blockQuota} trials)
+        <div style="font-size:0.75rem; color:#64748b;">${goal.desc}</div>
+      </div>
+      <button type="button" class="ledger-del-btn" onclick="deleteGoal('${goal.id}')">&times;</button>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function addNewGoal() {
+  const title = document.getElementById("new-goal-title")?.value.trim();
+  const desc = document.getElementById("new-goal-desc")?.value.trim() || title;
+  const quota = parseInt(document.getElementById("new-goal-quota")?.value, 10) || 20;
+
+  if (!title) {
+    alert("Please enter a target sound or goal title.");
+    return;
+  }
+
+  const newGoal = {
+    id: `goal_${Date.now()}`,
+    title: title,
+    desc: desc,
+    blockQuota: quota
+  };
+
+  sessionGoals.push(newGoal);
+  saveGoalsToStorage();
+  renderGoalTabs();
+  renderModalGoalList();
+
+  document.getElementById("new-goal-title").value = "";
+  document.getElementById("new-goal-desc").value = "";
+}
+
+function deleteGoal(goalId) {
+  if (sessionGoals.length <= 1) {
+    alert("You must keep at least one active goal in the session.");
+    return;
+  }
+  sessionGoals = sessionGoals.filter(g => g.id !== goalId);
+  if (activeGoalId === goalId) {
+    activeGoalId = sessionGoals[0].id;
+  }
+  saveGoalsToStorage();
+  renderGoalTabs();
+  syncActiveGoalInputs();
+  renderModalGoalList();
+  calculateAndRender();
+}
+
+// ==========================================
+// 4. LANGUAGE CONTEXT
 // ==========================================
 function setLanguageContext(langString) {
   currentLanguage = langString;
@@ -67,28 +228,25 @@ function setLanguageContext(langString) {
   calculateAndRender();
 }
 
-function quickSelectSound(soundName) {
-  if (targetSoundInputEl) {
-    targetSoundInputEl.value = soundName;
-    calculateAndRender();
-  }
-}
-
 // ==========================================
-// 4. LOGGING ENGINE (ZERO-WORD BLOCKERS)
+// 5. SESSION TRIAL ENGINE
 // ==========================================
 function logTrial(cueLevel) {
-  // Grab active sound or provide default probe name
-  let activeSound = targetSoundInputEl ? targetSoundInputEl.value.trim() : "";
-  if (!activeSound) activeSound = "General Sound Probe";
+  const currentGoal = sessionGoals.find(g => g.id === activeGoalId) || {
+    id: "default",
+    title: "General Target",
+    desc: "General articulation"
+  };
 
-  // Grab optional word (can be blank)
-  const activeWord = targetWordInputEl ? targetWordInputEl.value.trim() : "";
+  const soundName = activeSoundDisplayEl ? activeSoundDisplayEl.value.trim() : currentGoal.title;
+  const wordName = targetWordInputEl ? targetWordInputEl.value.trim() : "";
 
   const trialRecord = {
     id: Date.now(),
-    sound: activeSound,
-    word: activeWord,
+    goalId: currentGoal.id,
+    goalTitle: currentGoal.title,
+    sound: soundName,
+    word: wordName,
     lang: currentLanguage,
     cueLevel: cueLevel,
     isCorrect: cueLevel !== "err",
@@ -100,9 +258,8 @@ function logTrial(cueLevel) {
   calculateAndRender();
   renderLedger();
 
-  // Scroll ledger to latest entry
-  const container = document.querySelector(".trial-ledger-scroll");
-  if (container) container.scrollTop = container.scrollHeight;
+  const scrollContainer = document.querySelector(".trial-ledger-scroll");
+  if (scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
 }
 
 function undoLast() {
@@ -125,40 +282,123 @@ function resetSession() {
 }
 
 // ==========================================
-// 5. RETROACTIVE IN-PLACE EDITING
+// 6. MULTI-GOAL CALCULATIONS & SOAP FORMATTER
 // ==========================================
-function updateTrialSound(index, newSound) {
-  if (sessionTrials[index]) {
-    sessionTrials[index].sound = newSound.trim() || "General Sound";
-    saveTrialsToStorage();
-    calculateAndRender();
+function calculateAndRender() {
+  const currentGoal = sessionGoals.find(g => g.id === activeGoalId);
+  const activeQuota = currentGoal ? currentGoal.blockQuota : 20;
+
+  // Filter trials for the currently active tab
+  const activeGoalTrials = sessionTrials.filter(t => t.goalId === activeGoalId);
+  const activeTotal = activeGoalTrials.length;
+
+  // Progress Bar for Active Goal
+  const progressPct = Math.min(100, Math.round((activeTotal / activeQuota) * 100));
+  if (progressBarFillEl) progressBarFillEl.style.width = `${progressPct}%`;
+  if (trialCountDisplayEl) trialCountDisplayEl.textContent = `${activeTotal} / ${activeQuota}`;
+
+  // Active Goal Accuracies
+  if (activeTotal === 0) {
+    if (overallAccEl) overallAccEl.textContent = "0%";
+    if (indAccEl) indAccEl.textContent = "0%";
+  } else {
+    const correctCount = activeGoalTrials.filter(t => t.isCorrect).length;
+    const indCount = activeGoalTrials.filter(t => t.cueLevel === "ind").length;
+    if (overallAccEl) overallAccEl.textContent = `${Math.round((correctCount / activeTotal) * 100)}%`;
+    if (indAccEl) indAccEl.textContent = `${Math.round((indCount / activeTotal) * 100)}%`;
   }
+
+  // Render Cumulative Summary Cards for ALL Goals
+  renderMultiGoalSummaryCards();
+
+  // Generate Supervisor-Ready SOAP Objective Statement
+  generateMultiGoalSoapNote();
 }
 
-function updateTrialWord(index, newWord) {
-  if (sessionTrials[index]) {
-    sessionTrials[index].word = newWord.trim();
-    saveTrialsToStorage();
-    calculateAndRender();
+function renderMultiGoalSummaryCards() {
+  if (!goalSummaryCardsEl) return;
+  goalSummaryCardsEl.innerHTML = "";
+
+  sessionGoals.forEach(goal => {
+    const trials = sessionTrials.filter(t => t.goalId === goal.id);
+    const count = trials.length;
+    const correct = trials.filter(t => t.isCorrect).length;
+    const ind = trials.filter(t => t.cueLevel === "ind").length;
+
+    const accPct = count > 0 ? Math.round((correct / count) * 100) : 0;
+    const indPct = count > 0 ? Math.round((ind / count) * 100) : 0;
+
+    const row = document.createElement("div");
+    row.className = "goal-overview-row";
+    row.innerHTML = `
+      <div>
+        <span class="goal-overview-title">${goal.title}</span>: 
+        <span>${count}/${goal.blockQuota} trials</span>
+      </div>
+      <div class="goal-overview-stats">
+        ${accPct}% Overall | ${indPct}% Ind
+      </div>
+    `;
+    goalSummaryCardsEl.appendChild(row);
+  });
+}
+
+function generateMultiGoalSoapNote() {
+  if (!soapOutputEl) return;
+
+  const totalAllTrials = sessionTrials.length;
+  if (totalAllTrials === 0) {
+    soapOutputEl.value = "No trials logged for current session.";
+    return;
   }
+
+  const rawId = clientIdInputEl ? clientIdInputEl.value.trim() : "";
+  const clientSubject = rawId ? `Client ${rawId}` : "Client";
+
+  // Build goal-by-goal narrative breakdown
+  const goalNarratives = sessionGoals.map(goal => {
+    const trials = sessionTrials.filter(t => t.goalId === goal.id);
+    if (trials.length === 0) return null;
+
+    const total = trials.length;
+    const correct = trials.filter(t => t.isCorrect).length;
+    const ind = trials.filter(t => t.cueLevel === "ind").length;
+    const low = trials.filter(t => t.cueLevel === "low").length;
+    const mod = trials.filter(t => t.cueLevel === "mod").length;
+    const max = trials.filter(t => t.cueLevel === "max").length;
+    const err = trials.filter(t => t.cueLevel === "err").length;
+
+    const accPct = Math.round((correct / total) * 100);
+    const indPct = Math.round((ind / total) * 100);
+
+    // Itemized words
+    const wordCounts = {};
+    trials.forEach(t => {
+      const key = t.word ? t.word : t.sound;
+      wordCounts[key] = (wordCounts[key] || 0) + (t.isCorrect ? 1 : 0);
+    });
+    const stimulusBreakdown = Object.keys(wordCounts)
+      .map(k => `${k} (${wordCounts[k]} correct)`)
+      .join(", ");
+
+    return `${goal.title}: completed ${total} trials with ${accPct}% accuracy (${correct}/${total}) and ${indPct}% independent mastery. Prompt hierarchy: Ind: ${ind}, Min: ${low}, Mod: ${mod}, Max: ${max}, Errors: ${err}. Targets addressed: ${stimulusBreakdown || 'General probes'}.`;
+  }).filter(Boolean);
+
+  const soapString = `Objective: ${clientSubject} participated in speech-language therapy addressing ${sessionGoals.length} articulation/phonological targets within a ${currentLanguage} context (${totalAllTrials} total session trials).\n\n` + goalNarratives.join("\n\n");
+
+  soapOutputEl.value = soapString;
 }
 
-function updateTrialCue(index, newCue) {
-  if (sessionTrials[index]) {
-    sessionTrials[index].cueLevel = newCue;
-    sessionTrials[index].isCorrect = newCue !== "err";
-    saveTrialsToStorage();
-    calculateAndRender();
-  }
+function copySoapNote() {
+  if (sessionTrials.length === 0 || !soapOutputEl) return;
+  navigator.clipboard.writeText(soapOutputEl.value).then(() => {
+    alert("SOAP Objective note copied to clipboard!");
+  });
 }
 
-function deleteSingleTrial(index) {
-  sessionTrials.splice(index, 1);
-  saveTrialsToStorage();
-  calculateAndRender();
-  renderLedger();
-}
-
+// ==========================================
+// 7. SESSION LEDGER (Retroactive Editing)
+// ==========================================
 function renderLedger() {
   if (!trialLedgerBodyEl || !ledgerCountEl) return;
   ledgerCountEl.textContent = sessionTrials.length;
@@ -178,35 +418,41 @@ function renderLedger() {
     tdNum.textContent = index + 1;
     tr.appendChild(tdNum);
 
-    // Target Sound (Editable)
+    // Goal Tag
+    const tdGoal = document.createElement("td");
+    tdGoal.innerHTML = `<span style="font-weight:700; color:#0284c7; font-size:0.7rem;">${trial.goalTitle}</span>`;
+    tr.appendChild(tdGoal);
+
+    // Target Sound
     const tdSound = document.createElement("td");
     const inputSound = document.createElement("input");
     inputSound.type = "text";
     inputSound.className = "ledger-cell-input";
     inputSound.value = trial.sound || "";
-    inputSound.placeholder = "Sound";
-    inputSound.onchange = (e) => updateTrialSound(index, e.target.value);
+    inputSound.onchange = (e) => {
+      trial.sound = e.target.value.trim();
+      saveTrialsToStorage();
+      calculateAndRender();
+    };
     tdSound.appendChild(inputSound);
     tr.appendChild(tdSound);
 
-    // Stimulus Word (Editable)
+    // Word
     const tdWord = document.createElement("td");
     const inputWord = document.createElement("input");
     inputWord.type = "text";
     inputWord.className = "ledger-cell-input";
     inputWord.value = trial.word || "";
     inputWord.placeholder = "(sound only)";
-    inputWord.onchange = (e) => updateTrialWord(index, e.target.value);
+    inputWord.onchange = (e) => {
+      trial.word = e.target.value.trim();
+      saveTrialsToStorage();
+      calculateAndRender();
+    };
     tdWord.appendChild(inputWord);
     tr.appendChild(tdWord);
 
-    // Language Badge
-    const tdLang = document.createElement("td");
-    const langCode = trial.lang.includes("Spanish") ? "ES" : (trial.lang.includes("English") ? "EN" : "BI");
-    tdLang.innerHTML = `<span style="font-size:0.68rem; font-weight:700; color:#0284c7;">${langCode}</span>`;
-    tr.appendChild(tdLang);
-
-    // Cue Select
+    // Cue
     const tdCue = document.createElement("td");
     const selectCue = document.createElement("select");
     selectCue.className = "ledger-cue-select";
@@ -217,108 +463,35 @@ function renderLedger() {
       <option value="max" ${trial.cueLevel === 'max' ? 'selected' : ''}>+ Max</option>
       <option value="err" ${trial.cueLevel === 'err' ? 'selected' : ''}>- Inc</option>
     `;
-    selectCue.onchange = (e) => updateTrialCue(index, e.target.value);
+    selectCue.onchange = (e) => {
+      trial.cueLevel = e.target.value;
+      trial.isCorrect = e.target.value !== "err";
+      saveTrialsToStorage();
+      calculateAndRender();
+    };
     tdCue.appendChild(selectCue);
     tr.appendChild(tdCue);
 
-    // Delete Button
-    const tdAction = document.createElement("td");
+    // Delete
+    const tdDel = document.createElement("td");
     const delBtn = document.createElement("button");
     delBtn.className = "ledger-del-btn";
     delBtn.innerHTML = "&times;";
-    delBtn.title = "Delete trial";
-    delBtn.onclick = () => deleteSingleTrial(index);
-    tdAction.appendChild(delBtn);
-    tr.appendChild(tdAction);
+    delBtn.onclick = () => {
+      sessionTrials.splice(index, 1);
+      saveTrialsToStorage();
+      calculateAndRender();
+      renderLedger();
+    };
+    tdDel.appendChild(delBtn);
+    tr.appendChild(tdDel);
 
     trialLedgerBodyEl.appendChild(tr);
   });
 }
 
 // ==========================================
-// 6. METRICS & SOAP GENERATION
-// ==========================================
-function calculateAndRender() {
-  const total = sessionTrials.length;
-  const targetBlock = targetTrialsInputEl ? (parseInt(targetTrialsInputEl.value, 10) || 20) : 20;
-
-  // Update Progress Bar
-  const progressPct = Math.min(100, Math.round((total / targetBlock) * 100));
-  if (progressBarFillEl) progressBarFillEl.style.width = `${progressPct}%`;
-  if (trialCountDisplayEl) trialCountDisplayEl.textContent = `${total} / ${targetBlock}`;
-
-  if (total === 0) {
-    if (overallAccEl) overallAccEl.textContent = "0%";
-    if (indAccEl) indAccEl.textContent = "0%";
-    if (soapOutputEl) soapOutputEl.value = "No trials logged for current session.";
-    return;
-  }
-
-  let indCount = 0;
-  let lowCount = 0;
-  let modCount = 0;
-  let maxCount = 0;
-  let errCount = 0;
-
-  sessionTrials.forEach((t) => {
-    switch (t.cueLevel) {
-      case "ind": indCount++; break;
-      case "low": lowCount++; break;
-      case "mod": modCount++; break;
-      case "max": maxCount++; break;
-      case "err": errCount++; break;
-    }
-  });
-
-  const correctTotal = indCount + lowCount + modCount + maxCount;
-  const overallAccPct = Math.round((correctTotal / total) * 100);
-  const indAccPct = Math.round((indCount / total) * 100);
-
-  if (overallAccEl) overallAccEl.textContent = `${overallAccPct}%`;
-  if (indAccEl) indAccEl.textContent = `${indAccPct}%`;
-
-  // Aggregate by Target Sound
-  const soundSummaryMap = {};
-  sessionTrials.forEach((t) => {
-    const key = t.word ? `${t.sound} ("${t.word}")` : t.sound;
-    if (!soundSummaryMap[key]) {
-      soundSummaryMap[key] = { total: 0, correct: 0, ind: 0 };
-    }
-    soundSummaryMap[key].total++;
-    if (t.isCorrect) soundSummaryMap[key].correct++;
-    if (t.cueLevel === "ind") soundSummaryMap[key].ind++;
-  });
-
-  const itemDetails = Object.keys(soundSummaryMap)
-    .map((k) => {
-      const item = soundSummaryMap[k];
-      const pct = Math.round((item.correct / item.total) * 100);
-      return `${k}: ${item.correct}/${item.total} (${pct}%, Ind: ${item.ind})`;
-    })
-    .join("; ");
-
-  const rawId = clientIdInputEl ? clientIdInputEl.value.trim() : "";
-  const clientSubject = rawId ? `Client ${rawId}` : "Client";
-
-  // Compile Objective Statement for Clinic EHR
-  const soapString = `Objective: ${clientSubject} participated in a ${targetBlock}-trial target block (completed ${total} trials) in a ${currentLanguage} context. Overall stimulus accuracy was ${overallAccPct}% (${correctTotal}/${total}), with ${indAccPct}% independent mastery (${indCount}/${total}). Cueing Hierarchy Breakdown: Independent: ${indCount} (${Math.round((indCount / total) * 100)}%), Low/Min: ${lowCount} (${Math.round((lowCount / total) * 100)}%), Moderate: ${modCount} (${Math.round((modCount / total) * 100)}%), Maximal: ${maxCount} (${Math.round((maxCount / total) * 100)}%), Errors: ${errCount} (${Math.round((errCount / total) * 100)}%). Target Sound Breakdown: ${itemDetails}.`;
-
-  if (soapOutputEl) soapOutputEl.value = soapString;
-}
-
-function copySoapNote() {
-  if (sessionTrials.length === 0 || !soapOutputEl) return;
-  navigator.clipboard.writeText(soapOutputEl.value).then(() => {
-    alert("SOAP Objective note copied to clipboard!");
-  }).catch(() => {
-    soapOutputEl.select();
-    document.execCommand("copy");
-    alert("SOAP Objective note copied to clipboard!");
-  });
-}
-
-// ==========================================
-// 7. CSV EXPORT ENGINE
+// 8. CSV EXPORT ENGINE
 // ==========================================
 function generateCSVString() {
   const cueLabels = {
@@ -331,15 +504,15 @@ function generateCSVString() {
 
   const rawClientId = clientIdInputEl ? clientIdInputEl.value.trim() : "";
   const clientDisplay = rawClientId || "De-identified";
-  const targetBlock = targetTrialsInputEl ? (parseInt(targetTrialsInputEl.value, 10) || 20) : 20;
 
   const headers = [
     "Trial #",
     "Timestamp (ISO)",
     "Time (Local)",
+    "Goal Title",
     "Target Sound",
     "Stimulus Word",
-    "Language Context",
+    "Language Mode",
     "Cue Level",
     "Scoring Result",
     "Numeric Accuracy (0/1)"
@@ -349,49 +522,39 @@ function generateCSVString() {
     const trialDate = new Date(t.timestamp);
     const localTime = trialDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
-    const cleanSound = `"${t.sound.replace(/"/g, '""')}"`;
-    const cleanWord = t.word ? `"${t.word.replace(/"/g, '""')}"` : '""';
-    const cleanCue = `"${cueLabels[t.cueLevel] || t.cueLevel}"`;
-    const cleanLang = `"${t.lang}"`;
-    const resultText = t.isCorrect ? "Correct" : "Incorrect";
-    const binaryScore = t.isCorrect ? 1 : 0;
-
     return [
       index + 1,
       t.timestamp,
       `"${localTime}"`,
-      cleanSound,
-      cleanWord,
-      cleanLang,
-      cleanCue,
-      resultText,
-      binaryScore
+      `"${(t.goalTitle || '').replace(/"/g, '""')}"`,
+      `"${(t.sound || '').replace(/"/g, '""')}"`,
+      t.word ? `"${t.word.replace(/"/g, '""')}"` : '""',
+      `"${t.lang}"`,
+      `"${cueLabels[t.cueLevel] || t.cueLevel}"`,
+      t.isCorrect ? "Correct" : "Incorrect",
+      t.isCorrect ? 1 : 0
     ].join(",");
   });
 
   const total = sessionTrials.length;
-  const correctTotal = sessionTrials.filter((t) => t.isCorrect).length;
-  const indTotal = sessionTrials.filter((t) => t.cueLevel === "ind").length;
+  const correctTotal = sessionTrials.filter(t => t.isCorrect).length;
+  const indTotal = sessionTrials.filter(t => t.cueLevel === "ind").length;
   const overallPct = Math.round((correctTotal / total) * 100);
   const indPct = Math.round((indTotal / total) * 100);
 
   const summaryRows = [
-    `# BILINGUAL ARTICULATION & PHONOLOGY TRIAL LOG`,
+    `# BILINGUAL ARTICULATION & MULTI-GOAL TRIAL LOG`,
     `# Client Code / ID,${clientDisplay}`,
     `# Session Date,${new Date().toLocaleDateString()}`,
     `# Language Mode,${currentLanguage}`,
-    `# Target Trial Block,${targetBlock}`,
-    `# Completed Trials,${total}`,
-    `# Overall Accuracy,${overallPct}% (${correctTotal}/${total})`,
+    `# Total Goals Tracked,${sessionGoals.length}`,
+    `# Cumulative Trials,${total}`,
+    `# Cumulative Accuracy,${overallPct}% (${correctTotal}/${total})`,
     `# Independent Mastery,${indPct}% (${indTotal}/${total})`,
     `#`
   ];
 
-  return "\uFEFF" + [
-    summaryRows.join("\n"),
-    headers.join(","),
-    rows.join("\n")
-  ].join("\n");
+  return "\uFEFF" + [summaryRows.join("\n"), headers.join(","), rows.join("\n")].join("\n");
 }
 
 async function exportToCSV() {
@@ -407,29 +570,24 @@ async function exportToCSV() {
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
   const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, "-");
-  const filePrefix = cleanClientId ? `Artic_Trials_${cleanClientId}` : `Artic_Trials`;
+  const filePrefix = cleanClientId ? `MultiGoal_Trials_${cleanClientId}` : `MultiGoal_Trials`;
   const fileName = `${filePrefix}_${dateStr}_${timeStr}.csv`;
 
-  // 1. Web Share API (iPad Safari)
   const file = new File([csvContent], fileName, { type: "text/csv;charset=utf-8" });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({
         files: [file],
-        title: `Articulation Trial Data - ${cleanClientId || 'Session'}`,
-        text: `Bilingual trial log for ${cleanClientId || 'Client'} (${dateStr})`
+        title: `Multi-Goal Trial Log - ${cleanClientId || 'Session'}`,
+        text: `Bilingual multi-goal trial data for ${cleanClientId || 'Client'} (${dateStr})`
       });
       return;
     } catch (err) {
-      if (err.name !== "AbortError") {
-        console.warn("Share sheet failed, falling back to download.", err);
-      } else {
-        return;
-      }
+      if (err.name !== "AbortError") console.warn("Share sheet dismissed", err);
+      else return;
     }
   }
 
-  // 2. Blob Download (Desktop browsers)
   try {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -439,35 +597,37 @@ async function exportToCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 3000);
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
   } catch (err) {
-    alert("Automatic download blocked. Please use 'Copy CSV' below.");
+    alert("Download blocked. Please use Copy CSV below.");
   }
 }
 
 function copyRawCSV() {
-  if (sessionTrials.length === 0) {
-    alert("No trials logged to copy.");
-    return;
-  }
-  const csvContent = generateCSVString();
-  navigator.clipboard.writeText(csvContent).then(() => {
-    alert("Raw CSV data copied to clipboard! Paste directly into Google Sheets or Excel.");
+  if (sessionTrials.length === 0) return;
+  navigator.clipboard.writeText(generateCSVString()).then(() => {
+    alert("Raw CSV copied to clipboard!");
   });
 }
 
 // ==========================================
-// 8. STORAGE PERSISTENCE
+// 9. LOCAL PERSISTENCE & FAST-KEYS
 // ==========================================
-function saveTrialsToStorage() {
+function saveGoalsToStorage() {
+  localStorage.setItem("artic_session_goals", JSON.stringify(sessionGoals));
+}
+
+function loadGoalsFromStorage() {
   try {
-    localStorage.setItem("artic_tracker_trials", JSON.stringify(sessionTrials));
+    const cached = localStorage.getItem("artic_session_goals");
+    if (cached) sessionGoals = JSON.parse(cached);
   } catch (e) {
-    console.warn("Could not save trials to localStorage.", e);
+    sessionGoals = [];
   }
+}
+
+function saveTrialsToStorage() {
+  localStorage.setItem("artic_tracker_trials", JSON.stringify(sessionTrials));
 }
 
 function loadTrialsFromStorage() {
@@ -484,9 +644,6 @@ function loadLanguageFromStorage() {
   if (cachedLang) setLanguageContext(cachedLang);
 }
 
-// ==========================================
-// 9. FAST-KEYS
-// ==========================================
 function handleKeyboardShortcuts(e) {
   if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
 

@@ -5,7 +5,6 @@
   --text-muted: #64748b;
   --border: #e2e8f0;
   
-  /* Clinical Cueing Hierarchy Colors */
   --color-ind: #059669;
   --color-low: #0284c7;
   --color-mod: #d97706;
@@ -28,30 +27,24 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-main);
   padding: 12px;
-  max-width: 680px;
+  max-width: 700px;
   margin: 0 auto;
   line-height: 1.4;
   user-select: none;
 }
 
-header {
-  margin-bottom: 12px;
-}
-
+header { margin-bottom: 12px; }
 header h1 {
   font-size: 1.25rem;
   font-weight: 800;
   color: #1e293b;
   text-align: center;
   letter-spacing: -0.02em;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
-/* Language Context Segmented Control */
-.lang-selector-group {
-  margin-bottom: 10px;
-}
-
+/* Language Context */
+.lang-selector-group { margin-bottom: 10px; }
 .selector-label {
   display: block;
   font-size: 0.7rem;
@@ -60,7 +53,6 @@ header h1 {
   letter-spacing: 0.04em;
   color: var(--text-muted);
   margin-bottom: 4px;
-  text-align: center;
 }
 
 .segmented-control {
@@ -76,7 +68,7 @@ header h1 {
   background: transparent;
   border: none;
   border-radius: 6px;
-  padding: 8px 4px;
+  padding: 7px 4px;
   font-size: 0.8rem;
   font-weight: 700;
   color: #475569;
@@ -91,25 +83,76 @@ header h1 {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* Target Sound & Word Card */
+/* Goal Tabs Strip */
+.goal-tabs-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.tabs-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.text-link-btn {
+  background: none;
+  border: none;
+  color: #0284c7;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.goal-tab-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.goal-tab {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.1s ease;
+}
+
+.goal-tab.active {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0369a1;
+}
+
+/* Target Stimulus Card */
 .target-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 10px 12px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
 
 .target-field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  margin-bottom: 8px;
 }
 
 .field-item label {
   display: block;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -127,45 +170,6 @@ header h1 {
   background: #f8fafc;
   outline: none;
   font-family: inherit;
-}
-
-.field-item input:focus {
-  background: #ffffff;
-  border-color: #0284c7;
-  box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
-}
-
-.quick-sound-pills {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 5px;
-  padding-top: 4px;
-  border-top: 1px dashed var(--border);
-}
-
-.pill-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-right: 2px;
-}
-
-.sound-chip {
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  color: #334155;
-  font-size: 0.74rem;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 12px;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.sound-chip:active {
-  background: #e2e8f0;
 }
 
 /* Session Meta Grid */
@@ -199,20 +203,10 @@ header h1 {
   outline: none;
 }
 
-.meta-field input:focus {
-  border-color: #0284c7;
-}
-
 .trial-block-input-wrap {
   display: flex;
   align-items: center;
   gap: 6px;
-}
-
-.trial-block-input-wrap input {
-  text-align: center;
-  font-weight: 800;
-  color: #0284c7;
 }
 
 .unit-label {
@@ -221,7 +215,7 @@ header h1 {
   color: var(--text-muted);
 }
 
-/* Trial Block Progress Bar */
+/* Progress Bar */
 .progress-bar-container {
   width: 100%;
   height: 6px;
@@ -237,7 +231,7 @@ header h1 {
   transition: width 0.2s ease;
 }
 
-/* Metrics Dashboard */
+/* Metrics Cards */
 .metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -269,7 +263,7 @@ header h1 {
   color: var(--text-main);
 }
 
-/* Tactile Response Grid */
+/* Tactical Response Grid */
 .buttons-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -293,15 +287,11 @@ header h1 {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
-.btn:active {
-  transform: scale(0.97);
-}
-
+.btn:active { transform: scale(0.97); }
 .btn-ind { background-color: var(--color-ind); }
 .btn-low { background-color: var(--color-low); }
 .btn-mod { background-color: var(--color-mod); }
 .btn-max { background-color: var(--color-max); }
-
 .btn-err {
   grid-column: span 2;
   background-color: var(--color-err);
@@ -336,8 +326,8 @@ header h1 {
   border-color: #0369a1;
 }
 
-/* Interactive Session Ledger */
-.trial-history-section {
+/* Session Goals Summary Section */
+.session-goals-overview {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -345,24 +335,55 @@ header h1 {
   margin-bottom: 14px;
 }
 
-.history-header {
+.goal-summary-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.goal-overview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+}
+
+.goal-overview-title {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.goal-overview-stats {
+  font-weight: 700;
+  color: #0284c7;
+}
+
+/* Ledger & Documentation */
+.trial-history-section, .documentation {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.history-header, .doc-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
   margin-bottom: 6px;
 }
 
-.history-header h3 {
+.history-header h3, .doc-header h3 {
   font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
-}
-
-.history-header small {
-  font-size: 0.7rem;
-  color: #0284c7;
-  font-weight: 600;
 }
 
 .trial-ledger-scroll {
@@ -381,7 +402,7 @@ header h1 {
 
 .ledger-table th {
   background: #f8fafc;
-  padding: 6px 6px;
+  padding: 6px;
   font-size: 0.68rem;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -393,7 +414,6 @@ header h1 {
 .ledger-table td {
   padding: 4px 6px;
   border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle;
 }
 
 .ledger-cell-input {
@@ -401,7 +421,7 @@ header h1 {
   font-size: 0.8rem;
   border: 1px solid transparent;
   border-radius: 4px;
-  padding: 3px 5px;
+  padding: 2px 4px;
   background: transparent;
   font-family: inherit;
   font-weight: 600;
@@ -417,9 +437,8 @@ header h1 {
   font-size: 0.72rem;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
-  padding: 2px 3px;
+  padding: 2px;
   background: #ffffff;
-  color: #334155;
   font-weight: 600;
 }
 
@@ -429,47 +448,10 @@ header h1 {
   color: #94a3b8;
   font-size: 1rem;
   cursor: pointer;
-  padding: 2px 4px;
+  padding: 0 4px;
 }
 
-.ledger-del-btn:hover {
-  color: #dc2626;
-}
-
-.empty-ledger-msg {
-  text-align: center;
-  padding: 16px;
-  color: var(--text-muted);
-  font-style: italic;
-}
-
-/* Documentation */
-.documentation {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px;
-}
-
-.doc-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.doc-header h3 {
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.doc-actions {
-  display: flex;
-  gap: 6px;
-}
-
+.doc-actions { display: flex; gap: 6px; }
 .copy-btn {
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
@@ -493,4 +475,90 @@ header h1 {
   background: #f8fafc;
   resize: none;
   user-select: text;
+}
+
+/* Modal Styling */
+.goal-modal {
+  margin: auto;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0;
+  max-width: 520px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  background: #ffffff;
+}
+
+.goal-modal::backdrop {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.modal-content { padding: 18px; }
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.modal-header h2 { font-size: 1.1rem; color: #1e293b; }
+.close-modal-btn {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.add-goal-form {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.form-row { margin-bottom: 8px; }
+.form-row input {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.form-row-split {
+  display: flex;
+  gap: 8px;
+}
+
+.form-row-split input {
+  width: 110px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.btn-action {
+  flex: 1;
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.existing-goals-list { max-height: 200px; overflow-y: auto; }
+.modal-goal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #f1f5f9;
 }
