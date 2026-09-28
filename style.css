@@ -5,7 +5,7 @@
   --text-muted: #64748b;
   --border: #e2e8f0;
   
-  /* Clinical Cueing Colors */
+  /* Clinical Cueing Hierarchy Colors */
   --color-ind: #059669;
   --color-low: #0284c7;
   --color-mod: #d97706;
@@ -44,267 +44,197 @@ header h1 {
   color: #1e293b;
   text-align: center;
   letter-spacing: -0.02em;
+  margin-bottom: 10px;
 }
 
-/* Active Target Banner */
-.active-target-banner {
+/* Language Context Segmented Control */
+.lang-selector-group {
+  margin-bottom: 10px;
+}
+
+.selector-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.segmented-control {
+  display: flex;
+  background: #e2e8f0;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.lang-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: all 0.15s ease;
+}
+
+.lang-btn.active {
+  background: #ffffff;
+  color: #0284c7;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Target Sound & Word Card */
+.target-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 10px 12px;
-  margin-top: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.03);
 }
 
-.banner-top-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
+.target-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
-.banner-label {
+.field-item label {
+  display: block;
   font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
   color: var(--text-muted);
+  margin-bottom: 3px;
 }
 
-.text-link-btn {
-  background: none;
-  border: none;
-  color: #0284c7;
-  font-size: 0.75rem;
+.field-item input {
+  width: 100%;
+  font-size: 0.95rem;
   font-weight: 700;
-  cursor: pointer;
-  padding: 2px 4px;
-}
-
-.target-word-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#active-target-input {
-  flex: 1;
-  font-size: 1.15rem;
-  font-weight: 800;
   color: #0284c7;
-  text-align: center;
-  border: 1px solid transparent;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
-  padding: 4px 6px;
-  background: #f1f5f9;
+  padding: 6px 10px;
+  background: #f8fafc;
   outline: none;
   font-family: inherit;
 }
 
-#active-target-input:focus {
+.field-item input:focus {
   background: #ffffff;
   border-color: #0284c7;
   box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.15);
 }
 
-.nav-arrow-btn {
-  background: #e2e8f0;
+.quick-sound-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+
+.pill-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: 2px;
+}
+
+.sound-chip {
+  background: #f1f5f9;
   border: 1px solid #cbd5e1;
   color: #334155;
-  border-radius: 8px;
-  width: 38px;
-  height: 38px;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
   cursor: pointer;
   touch-action: manipulation;
 }
 
-.tap-hint {
-  display: block;
-  text-align: center;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  margin-top: 4px;
+.sound-chip:active {
+  background: #e2e8f0;
 }
 
-/* Collapsible Deck Manager */
-.deck-manager {
+/* Session Meta Grid */
+.session-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin-bottom: 12px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-}
-
-.drawer-toggle {
-  padding: 10px 14px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #334155;
-  cursor: pointer;
-  background: #f8fafc;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.drawer-toggle::-webkit-details-marker {
-  display: none;
-}
-
-.drawer-content {
-  padding: 14px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.section-subheading {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted);
+  padding: 8px 12px;
   margin-bottom: 6px;
 }
 
-.preset-pill-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.pill-btn {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  color: #1d4ed8;
-  font-size: 0.78rem;
-  font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 16px;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-
-.pill-generic {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-  color: #15803d;
-}
-
-.input-inline {
-  display: flex;
-  gap: 8px;
-}
-
-.input-inline input {
-  flex: 1;
-  padding: 8px 10px;
-  font-size: 0.85rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-}
-
-.btn-action {
-  background: #0284c7;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  padding: 8px 12px;
-  cursor: pointer;
-}
-
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.text-danger-btn {
-  background: none;
-  border: none;
-  color: #dc2626;
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.target-word-list {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-height: 140px;
-  overflow-y: auto;
-  padding-top: 4px;
-}
-
-.word-chip {
-  display: inline-flex;
-  align-items: center;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
-  border-radius: 16px;
-  padding: 3px 8px;
-  font-size: 0.8rem;
-  color: #334155;
-  cursor: pointer;
-}
-
-.word-chip.active {
-  background: #0284c7;
-  color: #ffffff;
-  border-color: #0369a1;
-  font-weight: 700;
-}
-
-.word-chip .chip-delete {
-  margin-left: 6px;
-  font-size: 0.85rem;
-  opacity: 0.7;
-}
-
-/* Session Metadata Bar */
-.session-meta-bar {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px 12px;
-  margin-bottom: 12px;
-}
-
-.meta-field {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .meta-field label {
-  font-size: 0.75rem;
+  display: block;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
+  margin-bottom: 2px;
 }
 
 .meta-field input {
-  flex: 1;
-  max-width: 160px;
+  width: 100%;
   padding: 6px 8px;
   font-size: 0.85rem;
   font-weight: 600;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
-  text-align: right;
-  text-transform: uppercase;
+  outline: none;
+}
+
+.meta-field input:focus {
+  border-color: #0284c7;
+}
+
+.trial-block-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trial-block-input-wrap input {
+  text-align: center;
+  font-weight: 800;
+  color: #0284c7;
+}
+
+.unit-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Trial Block Progress Bar */
+.progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #0284c7;
+  transition: width 0.2s ease;
 }
 
 /* Metrics Dashboard */
@@ -325,7 +255,7 @@ header h1 {
 
 .card .label {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -339,7 +269,7 @@ header h1 {
   color: var(--text-main);
 }
 
-/* Response Grid Buttons */
+/* Tactile Response Grid */
 .buttons-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -378,12 +308,12 @@ header h1 {
   min-height: 50px;
 }
 
-/* Controls (Undo, Export, Reset) */
+/* Controls */
 .controls {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .btn-secondary {
@@ -406,37 +336,37 @@ header h1 {
   border-color: #0369a1;
 }
 
-/* Interactive Session Ledger (Retroactive Editing) */
+/* Interactive Session Ledger */
 .trial-history-section {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .history-header {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .history-header h3 {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
 }
 
 .history-header small {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #0284c7;
   font-weight: 600;
 }
 
 .trial-ledger-scroll {
-  max-height: 175px;
+  max-height: 180px;
   overflow-y: auto;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -445,14 +375,14 @@ header h1 {
 .ledger-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   text-align: left;
 }
 
 .ledger-table th {
   background: #f8fafc;
-  padding: 6px 8px;
-  font-size: 0.7rem;
+  padding: 6px 6px;
+  font-size: 0.68rem;
   text-transform: uppercase;
   color: var(--text-muted);
   border-bottom: 1px solid var(--border);
@@ -466,28 +396,28 @@ header h1 {
   vertical-align: middle;
 }
 
-.ledger-word-input {
+.ledger-cell-input {
   width: 100%;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   border: 1px solid transparent;
   border-radius: 4px;
-  padding: 4px 6px;
+  padding: 3px 5px;
   background: transparent;
   font-family: inherit;
   font-weight: 600;
   color: #1e293b;
 }
 
-.ledger-word-input:focus {
+.ledger-cell-input:focus {
   background: #ffffff;
   border-color: #0284c7;
 }
 
 .ledger-cue-select {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
-  padding: 2px 4px;
+  padding: 2px 3px;
   background: #ffffff;
   color: #334155;
   font-weight: 600;
@@ -499,7 +429,7 @@ header h1 {
   color: #94a3b8;
   font-size: 1rem;
   cursor: pointer;
-  padding: 2px 6px;
+  padding: 2px 4px;
 }
 
 .ledger-del-btn:hover {
@@ -529,7 +459,7 @@ header h1 {
 }
 
 .doc-header h3 {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -557,7 +487,7 @@ header h1 {
   border-radius: 8px;
   padding: 8px;
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   line-height: 1.4;
   color: #1e293b;
   background: #f8fafc;

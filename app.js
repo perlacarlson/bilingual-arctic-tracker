@@ -1,253 +1,96 @@
 /**
- * Bilingual Articulation & Phonology Session Tracker
- * Designed for Pediatric Speech-Language Pathology Clinical Practicums & CF Practice
+ * Bilingual Artic & Phonology Session Tracker
+ * Full Support for Sound-Only Tracking, Dynamic Trial Blocks, & Language Modes
  */
 
 // ==========================================
-// 1. CLINICAL PRESETS (Bilingual Spanish/English)
+// 1. STATE MANAGEMENT
 // ==========================================
-const PRESETS = {
-  vibrante_multiple: [
-    "ratón (initial /r/)",
-    "rana (initial /r/)",
-    "reloj (initial /r/)",
-    "perro (medial /r/)",
-    "carro (medial /r/)",
-    "torre (medial /r/)"
-  ],
-  vibrante_simple: [
-    "pera (intervocalic /ɾ/)",
-    "cara (intervocalic /ɾ/)",
-    "toro (intervocalic /ɾ/)",
-    "brazo (cluster /bɾ/)",
-    "tren (cluster /tɾ/)",
-    "fruta (cluster /fɾ/)"
-  ],
-  velar_fronting: [
-    "casa vs taza (/k/ vs /t/)",
-    "capa vs tapa (/k/ vs /t/)",
-    "coro vs toro (/k/ vs /t/)",
-    "boca vs bota (/k/ vs /t/)",
-    "cola vs tola (/k/ vs /t/)"
-  ],
-  coda_s: [
-    "pasto (medial coda /s/)",
-    "mosca (medial coda /s/)",
-    "estrella (medial coda /s/)",
-    "dos (final coda /s/)",
-    "lápiz (final coda /s/)",
-    "manos (final coda /s/)"
-  ]
-};
-
-// ==========================================
-// 2. STATE MANAGEMENT
-// ==========================================
-let targetWords = [];
-let currentWordIndex = 0;
+let currentLanguage = "Spanish Only";
 let sessionTrials = [];
 
-// DOM Element References
-let wordDisplayEl;
-let totalCountEl;
+// DOM References
+let targetSoundInputEl;
+let targetWordInputEl;
+let clientIdInputEl;
+let targetTrialsInputEl;
+let progressBarFillEl;
+let trialCountDisplayEl;
 let overallAccEl;
 let indAccEl;
 let soapOutputEl;
-let targetListEl;
-let targetCountBadgeEl;
-let newWordInputEl;
-let bulkWordsInputEl;
-let clientIdInputEl;
+let trialLedgerBodyEl;
+let ledgerCountEl;
 
 // ==========================================
-// 3. INITIALIZATION
+// 2. INITIALIZATION
 // ==========================================
 function init() {
-  // Bind DOM Elements
-  wordDisplayEl = document.getElementById("word-display");
-  totalCountEl = document.getElementById("total-count");
+  targetSoundInputEl = document.getElementById("target-sound-input");
+  targetWordInputEl = document.getElementById("target-word-input");
+  clientIdInputEl = document.getElementById("client-id-input");
+  targetTrialsInputEl = document.getElementById("target-trials-input");
+  progressBarFillEl = document.getElementById("progress-bar-fill");
+  trialCountDisplayEl = document.getElementById("trial-count-display");
   overallAccEl = document.getElementById("overall-acc");
   indAccEl = document.getElementById("ind-acc");
   soapOutputEl = document.getElementById("soap-output");
-  targetListEl = document.getElementById("target-list");
-  targetCountBadgeEl = document.getElementById("target-count-badge");
-  newWordInputEl = document.getElementById("new-word-input");
-  bulkWordsInputEl = document.getElementById("bulk-words-input");
-  clientIdInputEl = document.getElementById("client-id-input");
+  trialLedgerBodyEl = document.getElementById("trial-ledger-body");
+  ledgerCountEl = document.getElementById("ledger-count");
 
-  // Load Cached Data
-  loadWordsFromStorage();
   loadTrialsFromStorage();
+  loadLanguageFromStorage();
 
-  // Seed default targets if sound bank is empty
-  if (targetWords.length === 0) {
-    targetWords = [...PRESETS.vibrante_multiple];
-    saveWordsToStorage();
-  }
-
-  // Initial UI Render
-  renderWordBank();
-  updateTargetWordDisplay();
   calculateAndRender();
+  renderLedger();
 
-  // Event Listeners
-  if (wordDisplayEl) {
-    wordDisplayEl.addEventListener("click", cycleNextWord);
-  }
+  // Listeners for dynamic updates
+  if (clientIdInputEl) clientIdInputEl.addEventListener("input", calculateAndRender);
+  if (targetTrialsInputEl) targetTrialsInputEl.addEventListener("input", calculateAndRender);
+  if (targetSoundInputEl) targetSoundInputEl.addEventListener("input", calculateAndRender);
 
-  if (newWordInputEl) {
-    newWordInputEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") addSingleWord();
-    });
-  }
-
-  if (clientIdInputEl) {
-    clientIdInputEl.addEventListener("input", calculateAndRender);
-  }
-
-  // Keyboard Shortcuts for external keyboards / laptops
   window.addEventListener("keydown", handleKeyboardShortcuts);
 }
 
 // ==========================================
-// 4. WORD BANK MANAGEMENT ENGINE
+// 3. LANGUAGE MODE & QUICK SOUNDS
 // ==========================================
-function renderWordBank() {
-  if (!targetListEl || !targetCountBadgeEl) return;
+function setLanguageContext(langString) {
+  currentLanguage = langString;
+  localStorage.setItem("artic_current_lang", langString);
 
-  targetListEl.innerHTML = "";
-  targetCountBadgeEl.textContent = targetWords.length;
+  document.querySelectorAll(".lang-btn").forEach(btn => btn.classList.remove("active"));
+  if (langString === "Spanish Only") document.getElementById("btn-lang-es")?.classList.add("active");
+  if (langString === "English Only") document.getElementById("btn-lang-en")?.classList.add("active");
+  if (langString === "Bilingual (Both)") document.getElementById("btn-lang-bi")?.classList.add("active");
 
-  targetWords.forEach((word, index) => {
-    const chip = document.createElement("li");
-    chip.className = `word-chip ${index === currentWordIndex ? "active" : ""}`;
-
-    const wordText = document.createElement("span");
-    wordText.textContent = word;
-    wordText.onclick = () => selectWord(index);
-
-    const deleteBtn = document.createElement("span");
-    deleteBtn.className = "chip-delete";
-    deleteBtn.innerHTML = "&times;";
-    deleteBtn.title = "Remove sound target";
-    deleteBtn.onclick = (e) => {
-      e.stopPropagation();
-      deleteWord(index);
-    };
-
-    chip.appendChild(wordText);
-    chip.appendChild(deleteBtn);
-    targetListEl.appendChild(chip);
-  });
+  calculateAndRender();
 }
 
-function selectWord(index) {
-  currentWordIndex = index;
-  updateTargetWordDisplay();
-  renderWordBank();
-}
-
-function cycleNextWord() {
-  if (targetWords.length === 0) return;
-  currentWordIndex = (currentWordIndex + 1) % targetWords.length;
-  updateTargetWordDisplay();
-  renderWordBank();
-}
-
-function prevWord() {
-  if (targetWords.length === 0) return;
-  currentWordIndex = (currentWordIndex - 1 + targetWords.length) % targetWords.length;
-  updateTargetWordDisplay();
-  renderWordBank();
-}
-
-function updateTargetWordDisplay() {
-  if (!wordDisplayEl) return;
-  if (targetWords.length === 0) {
-    wordDisplayEl.textContent = "(No targets in deck)";
-  } else {
-    wordDisplayEl.textContent = targetWords[currentWordIndex];
+function quickSelectSound(soundName) {
+  if (targetSoundInputEl) {
+    targetSoundInputEl.value = soundName;
+    calculateAndRender();
   }
-}
-
-function addSingleWord() {
-  if (!newWordInputEl) return;
-  const val = newWordInputEl.value.trim();
-  if (!val) return;
-
-  targetWords.push(val);
-  newWordInputEl.value = "";
-  saveWordsToStorage();
-  renderWordBank();
-
-  if (targetWords.length === 1) {
-    selectWord(0);
-  }
-}
-
-function addBulkWords() {
-  if (!bulkWordsInputEl) return;
-  const raw = bulkWordsInputEl.value;
-  if (!raw.trim()) return;
-
-  const entries = raw
-    .split(/[\n,]+/)
-    .map((w) => w.trim())
-    .filter((w) => w.length > 0);
-
-  if (entries.length > 0) {
-    targetWords.push(...entries);
-    bulkWordsInputEl.value = "";
-    saveWordsToStorage();
-    renderWordBank();
-  }
-}
-
-function deleteWord(index) {
-  targetWords.splice(index, 1);
-  if (currentWordIndex >= targetWords.length) {
-    currentWordIndex = Math.max(0, targetWords.length - 1);
-  }
-  saveWordsToStorage();
-  updateTargetWordDisplay();
-  renderWordBank();
-}
-
-function clearAllWords() {
-  if (targetWords.length === 0) return;
-  if (!confirm("Clear all targets from this sound deck?")) return;
-
-  targetWords = [];
-  currentWordIndex = 0;
-  saveWordsToStorage();
-  updateTargetWordDisplay();
-  renderWordBank();
-}
-
-function loadPreset(presetKey) {
-  if (!PRESETS[presetKey]) return;
-  targetWords = [...PRESETS[presetKey]];
-  currentWordIndex = 0;
-  saveWordsToStorage();
-  updateTargetWordDisplay();
-  renderWordBank();
 }
 
 // ==========================================
-// 5. SESSION TRIAL LOGGING
+// 4. LOGGING ENGINE (ZERO-WORD BLOCKERS)
 // ==========================================
 function logTrial(cueLevel) {
-  if (targetWords.length === 0) {
-    alert("Please add at least one target word to the deck before logging trials.");
-    return;
-  }
+  // Grab active sound or provide default probe name
+  let activeSound = targetSoundInputEl ? targetSoundInputEl.value.trim() : "";
+  if (!activeSound) activeSound = "General Sound Probe";
 
-  const currentWord = targetWords[currentWordIndex];
+  // Grab optional word (can be blank)
+  const activeWord = targetWordInputEl ? targetWordInputEl.value.trim() : "";
 
   const trialRecord = {
     id: Date.now(),
-    word: currentWord,
-    cueLevel: cueLevel, // 'ind', 'low', 'mod', 'max', 'err'
+    sound: activeSound,
+    word: activeWord,
+    lang: currentLanguage,
+    cueLevel: cueLevel,
     isCorrect: cueLevel !== "err",
     timestamp: new Date().toISOString()
   };
@@ -255,6 +98,11 @@ function logTrial(cueLevel) {
   sessionTrials.push(trialRecord);
   saveTrialsToStorage();
   calculateAndRender();
+  renderLedger();
+
+  // Scroll ledger to latest entry
+  const container = document.querySelector(".trial-ledger-scroll");
+  if (container) container.scrollTop = container.scrollHeight;
 }
 
 function undoLast() {
@@ -262,6 +110,7 @@ function undoLast() {
   sessionTrials.pop();
   saveTrialsToStorage();
   calculateAndRender();
+  renderLedger();
 }
 
 function resetSession() {
@@ -271,24 +120,140 @@ function resetSession() {
     if (clientIdInputEl) clientIdInputEl.value = "";
     saveTrialsToStorage();
     calculateAndRender();
+    renderLedger();
   }
 }
 
 // ==========================================
-// 6. CLINICAL METRICS & SOAP COMPILER
+// 5. RETROACTIVE IN-PLACE EDITING
+// ==========================================
+function updateTrialSound(index, newSound) {
+  if (sessionTrials[index]) {
+    sessionTrials[index].sound = newSound.trim() || "General Sound";
+    saveTrialsToStorage();
+    calculateAndRender();
+  }
+}
+
+function updateTrialWord(index, newWord) {
+  if (sessionTrials[index]) {
+    sessionTrials[index].word = newWord.trim();
+    saveTrialsToStorage();
+    calculateAndRender();
+  }
+}
+
+function updateTrialCue(index, newCue) {
+  if (sessionTrials[index]) {
+    sessionTrials[index].cueLevel = newCue;
+    sessionTrials[index].isCorrect = newCue !== "err";
+    saveTrialsToStorage();
+    calculateAndRender();
+  }
+}
+
+function deleteSingleTrial(index) {
+  sessionTrials.splice(index, 1);
+  saveTrialsToStorage();
+  calculateAndRender();
+  renderLedger();
+}
+
+function renderLedger() {
+  if (!trialLedgerBodyEl || !ledgerCountEl) return;
+  ledgerCountEl.textContent = sessionTrials.length;
+
+  if (sessionTrials.length === 0) {
+    trialLedgerBodyEl.innerHTML = `<tr><td colspan="6" class="empty-ledger-msg">No trials recorded yet.</td></tr>`;
+    return;
+  }
+
+  trialLedgerBodyEl.innerHTML = "";
+
+  sessionTrials.forEach((trial, index) => {
+    const tr = document.createElement("tr");
+
+    // #
+    const tdNum = document.createElement("td");
+    tdNum.textContent = index + 1;
+    tr.appendChild(tdNum);
+
+    // Target Sound (Editable)
+    const tdSound = document.createElement("td");
+    const inputSound = document.createElement("input");
+    inputSound.type = "text";
+    inputSound.className = "ledger-cell-input";
+    inputSound.value = trial.sound || "";
+    inputSound.placeholder = "Sound";
+    inputSound.onchange = (e) => updateTrialSound(index, e.target.value);
+    tdSound.appendChild(inputSound);
+    tr.appendChild(tdSound);
+
+    // Stimulus Word (Editable)
+    const tdWord = document.createElement("td");
+    const inputWord = document.createElement("input");
+    inputWord.type = "text";
+    inputWord.className = "ledger-cell-input";
+    inputWord.value = trial.word || "";
+    inputWord.placeholder = "(sound only)";
+    inputWord.onchange = (e) => updateTrialWord(index, e.target.value);
+    tdWord.appendChild(inputWord);
+    tr.appendChild(tdWord);
+
+    // Language Badge
+    const tdLang = document.createElement("td");
+    const langCode = trial.lang.includes("Spanish") ? "ES" : (trial.lang.includes("English") ? "EN" : "BI");
+    tdLang.innerHTML = `<span style="font-size:0.68rem; font-weight:700; color:#0284c7;">${langCode}</span>`;
+    tr.appendChild(tdLang);
+
+    // Cue Select
+    const tdCue = document.createElement("td");
+    const selectCue = document.createElement("select");
+    selectCue.className = "ledger-cue-select";
+    selectCue.innerHTML = `
+      <option value="ind" ${trial.cueLevel === 'ind' ? 'selected' : ''}>+ Ind</option>
+      <option value="low" ${trial.cueLevel === 'low' ? 'selected' : ''}>+ Low</option>
+      <option value="mod" ${trial.cueLevel === 'mod' ? 'selected' : ''}>+ Mod</option>
+      <option value="max" ${trial.cueLevel === 'max' ? 'selected' : ''}>+ Max</option>
+      <option value="err" ${trial.cueLevel === 'err' ? 'selected' : ''}>- Inc</option>
+    `;
+    selectCue.onchange = (e) => updateTrialCue(index, e.target.value);
+    tdCue.appendChild(selectCue);
+    tr.appendChild(tdCue);
+
+    // Delete Button
+    const tdAction = document.createElement("td");
+    const delBtn = document.createElement("button");
+    delBtn.className = "ledger-del-btn";
+    delBtn.innerHTML = "&times;";
+    delBtn.title = "Delete trial";
+    delBtn.onclick = () => deleteSingleTrial(index);
+    tdAction.appendChild(delBtn);
+    tr.appendChild(tdAction);
+
+    trialLedgerBodyEl.appendChild(tr);
+  });
+}
+
+// ==========================================
+// 6. METRICS & SOAP GENERATION
 // ==========================================
 function calculateAndRender() {
   const total = sessionTrials.length;
+  const targetBlock = targetTrialsInputEl ? (parseInt(targetTrialsInputEl.value, 10) || 20) : 20;
+
+  // Update Progress Bar
+  const progressPct = Math.min(100, Math.round((total / targetBlock) * 100));
+  if (progressBarFillEl) progressBarFillEl.style.width = `${progressPct}%`;
+  if (trialCountDisplayEl) trialCountDisplayEl.textContent = `${total} / ${targetBlock}`;
 
   if (total === 0) {
-    if (totalCountEl) totalCountEl.textContent = "0";
     if (overallAccEl) overallAccEl.textContent = "0%";
     if (indAccEl) indAccEl.textContent = "0%";
     if (soapOutputEl) soapOutputEl.value = "No trials logged for current session.";
     return;
   }
 
-  // Count cueing levels
   let indCount = 0;
   let lowCount = 0;
   let modCount = 0;
@@ -309,40 +274,36 @@ function calculateAndRender() {
   const overallAccPct = Math.round((correctTotal / total) * 100);
   const indAccPct = Math.round((indCount / total) * 100);
 
-  // Update Metrics Dashboard
-  if (totalCountEl) totalCountEl.textContent = total;
   if (overallAccEl) overallAccEl.textContent = `${overallAccPct}%`;
   if (indAccEl) indAccEl.textContent = `${indAccPct}%`;
 
-  // Itemized accuracy per stimulus
-  const wordSummaryMap = {};
+  // Aggregate by Target Sound
+  const soundSummaryMap = {};
   sessionTrials.forEach((t) => {
-    if (!wordSummaryMap[t.word]) {
-      wordSummaryMap[t.word] = { total: 0, correct: 0, ind: 0 };
+    const key = t.word ? `${t.sound} ("${t.word}")` : t.sound;
+    if (!soundSummaryMap[key]) {
+      soundSummaryMap[key] = { total: 0, correct: 0, ind: 0 };
     }
-    wordSummaryMap[t.word].total++;
-    if (t.isCorrect) wordSummaryMap[t.word].correct++;
-    if (t.cueLevel === "ind") wordSummaryMap[t.word].ind++;
+    soundSummaryMap[key].total++;
+    if (t.isCorrect) soundSummaryMap[key].correct++;
+    if (t.cueLevel === "ind") soundSummaryMap[key].ind++;
   });
 
-  const stimulusDetails = Object.keys(wordSummaryMap)
-    .map((w) => {
-      const item = wordSummaryMap[w];
+  const itemDetails = Object.keys(soundSummaryMap)
+    .map((k) => {
+      const item = soundSummaryMap[k];
       const pct = Math.round((item.correct / item.total) * 100);
-      return `${w}: ${item.correct}/${item.total} (${pct}%, Ind: ${item.ind})`;
+      return `${k}: ${item.correct}/${item.total} (${pct}%, Ind: ${item.ind})`;
     })
     .join("; ");
 
-  // Identify Client Subject
   const rawId = clientIdInputEl ? clientIdInputEl.value.trim() : "";
   const clientSubject = rawId ? `Client ${rawId}` : "Client";
 
-  // Build Objective (O) Statement formatted for clinical documentation
-  const soapString = `Objective: ${clientSubject} completed ${total} articulation/phonology trials targeting bilingual speech goals. Overall stimulus accuracy was ${overallAccPct}% (${correctTotal}/${total}), with ${indAccPct}% independent mastery (${indCount}/${total}). Cue Hierarchy Breakdown: Independent: ${indCount} (${Math.round((indCount / total) * 100)}%), Low/Min: ${lowCount} (${Math.round((lowCount / total) * 100)}%), Moderate: ${modCount} (${Math.round((modCount / total) * 100)}%), Maximal: ${maxCount} (${Math.round((maxCount / total) * 100)}%), Errors: ${errCount} (${Math.round((errCount / total) * 100)}%). Target Breakdown: ${stimulusDetails}.`;
+  // Compile Objective Statement for Clinic EHR
+  const soapString = `Objective: ${clientSubject} participated in a ${targetBlock}-trial target block (completed ${total} trials) in a ${currentLanguage} context. Overall stimulus accuracy was ${overallAccPct}% (${correctTotal}/${total}), with ${indAccPct}% independent mastery (${indCount}/${total}). Cueing Hierarchy Breakdown: Independent: ${indCount} (${Math.round((indCount / total) * 100)}%), Low/Min: ${lowCount} (${Math.round((lowCount / total) * 100)}%), Moderate: ${modCount} (${Math.round((modCount / total) * 100)}%), Maximal: ${maxCount} (${Math.round((maxCount / total) * 100)}%), Errors: ${errCount} (${Math.round((errCount / total) * 100)}%). Target Sound Breakdown: ${itemDetails}.`;
 
-  if (soapOutputEl) {
-    soapOutputEl.value = soapString;
-  }
+  if (soapOutputEl) soapOutputEl.value = soapString;
 }
 
 function copySoapNote() {
@@ -357,14 +318,9 @@ function copySoapNote() {
 }
 
 // ==========================================
-// 7. CLINICAL CSV EXPORT ENGINE
+// 7. CSV EXPORT ENGINE
 // ==========================================
-function exportToCSV() {
-  if (sessionTrials.length === 0) {
-    alert("No trials logged in this session to export.");
-    return;
-  }
-
+function generateCSVString() {
   const cueLabels = {
     ind: "Independent",
     low: "Low / Minimal Cue",
@@ -374,31 +330,29 @@ function exportToCSV() {
   };
 
   const rawClientId = clientIdInputEl ? clientIdInputEl.value.trim() : "";
-  const cleanClientId = rawClientId.replace(/[^a-zA-Z0-9_-]/g, "");
-  const clientDisplay = cleanClientId || "De-identified";
+  const clientDisplay = rawClientId || "De-identified";
+  const targetBlock = targetTrialsInputEl ? (parseInt(targetTrialsInputEl.value, 10) || 20) : 20;
 
-  // Column Headers
   const headers = [
     "Trial #",
     "Timestamp (ISO)",
     "Time (Local)",
-    "Target Stimulus",
+    "Target Sound",
+    "Stimulus Word",
+    "Language Context",
     "Cue Level",
     "Scoring Result",
     "Numeric Accuracy (0/1)"
   ];
 
-  // Data Rows
   const rows = sessionTrials.map((t, index) => {
     const trialDate = new Date(t.timestamp);
-    const localTime = trialDate.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    });
+    const localTime = trialDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
-    const cleanWord = `"${t.word.replace(/"/g, '""')}"`;
+    const cleanSound = `"${t.sound.replace(/"/g, '""')}"`;
+    const cleanWord = t.word ? `"${t.word.replace(/"/g, '""')}"` : '""';
     const cleanCue = `"${cueLabels[t.cueLevel] || t.cueLevel}"`;
+    const cleanLang = `"${t.lang}"`;
     const resultText = t.isCorrect ? "Correct" : "Incorrect";
     const binaryScore = t.isCorrect ? 1 : 0;
 
@@ -406,14 +360,15 @@ function exportToCSV() {
       index + 1,
       t.timestamp,
       `"${localTime}"`,
+      cleanSound,
       cleanWord,
+      cleanLang,
       cleanCue,
       resultText,
       binaryScore
     ].join(",");
   });
 
-  // Session Summary Metadata Header
   const total = sessionTrials.length;
   const correctTotal = sessionTrials.filter((t) => t.isCorrect).length;
   const indTotal = sessionTrials.filter((t) => t.cueLevel === "ind").length;
@@ -424,66 +379,94 @@ function exportToCSV() {
     `# BILINGUAL ARTICULATION & PHONOLOGY TRIAL LOG`,
     `# Client Code / ID,${clientDisplay}`,
     `# Session Date,${new Date().toLocaleDateString()}`,
-    `# Total Trials,${total}`,
+    `# Language Mode,${currentLanguage}`,
+    `# Target Trial Block,${targetBlock}`,
+    `# Completed Trials,${total}`,
     `# Overall Accuracy,${overallPct}% (${correctTotal}/${total})`,
     `# Independent Mastery,${indPct}% (${indTotal}/${total})`,
     `#`
   ];
 
-  // Prepend \uFEFF (UTF-8 Byte Order Mark) for Excel Spanish accent integrity
-  const csvContent = "\uFEFF" + [
+  return "\uFEFF" + [
     summaryRows.join("\n"),
     headers.join(","),
     rows.join("\n")
   ].join("\n");
+}
 
-  // Dynamic timestamped filename
+async function exportToCSV() {
+  if (sessionTrials.length === 0) {
+    alert("No trials logged in this session to export.");
+    return;
+  }
+
+  const csvContent = generateCSVString();
+  const rawClientId = clientIdInputEl ? clientIdInputEl.value.trim() : "";
+  const cleanClientId = rawClientId.replace(/[^a-zA-Z0-9_-]/g, "");
+
   const now = new Date();
   const dateStr = now.toISOString().slice(0, 10);
   const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, "-");
-
   const filePrefix = cleanClientId ? `Artic_Trials_${cleanClientId}` : `Artic_Trials`;
   const fileName = `${filePrefix}_${dateStr}_${timeStr}.csv`;
 
-  // Trigger browser file download
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  // 1. Web Share API (iPad Safari)
+  const file = new File([csvContent], fileName, { type: "text/csv;charset=utf-8" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: `Articulation Trial Data - ${cleanClientId || 'Session'}`,
+        text: `Bilingual trial log for ${cleanClientId || 'Client'} (${dateStr})`
+      });
+      return;
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        console.warn("Share sheet failed, falling back to download.", err);
+      } else {
+        return;
+      }
+    }
+  }
 
-  link.setAttribute("href", url);
-  link.setAttribute("download", fileName);
-  link.style.visibility = "hidden";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  // 2. Blob Download (Desktop browsers)
+  try {
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 3000);
+  } catch (err) {
+    alert("Automatic download blocked. Please use 'Copy CSV' below.");
+  }
+}
+
+function copyRawCSV() {
+  if (sessionTrials.length === 0) {
+    alert("No trials logged to copy.");
+    return;
+  }
+  const csvContent = generateCSVString();
+  navigator.clipboard.writeText(csvContent).then(() => {
+    alert("Raw CSV data copied to clipboard! Paste directly into Google Sheets or Excel.");
+  });
 }
 
 // ==========================================
 // 8. STORAGE PERSISTENCE
 // ==========================================
-function saveWordsToStorage() {
-  try {
-    localStorage.setItem("artic_custom_deck", JSON.stringify(targetWords));
-  } catch (e) {
-    console.warn("Could not save sound deck to localStorage.", e);
-  }
-}
-
-function loadWordsFromStorage() {
-  try {
-    const cached = localStorage.getItem("artic_custom_deck");
-    if (cached) targetWords = JSON.parse(cached);
-  } catch (e) {
-    targetWords = [];
-  }
-}
-
 function saveTrialsToStorage() {
   try {
     localStorage.setItem("artic_tracker_trials", JSON.stringify(sessionTrials));
   } catch (e) {
-    console.warn("Could not save session trials to localStorage.", e);
+    console.warn("Could not save trials to localStorage.", e);
   }
 }
 
@@ -496,11 +479,16 @@ function loadTrialsFromStorage() {
   }
 }
 
+function loadLanguageFromStorage() {
+  const cachedLang = localStorage.getItem("artic_current_lang");
+  if (cachedLang) setLanguageContext(cachedLang);
+}
+
 // ==========================================
-// 9. KEYBOARD SHORTCUTS
+// 9. FAST-KEYS
 // ==========================================
 function handleKeyboardShortcuts(e) {
-  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
 
   switch (e.key) {
     case "1": logTrial("ind"); break;
@@ -511,17 +499,7 @@ function handleKeyboardShortcuts(e) {
     case "-": logTrial("err"); break;
     case "u":
     case "U": undoLast(); break;
-    case " ":
-    case "ArrowRight":
-      e.preventDefault();
-      cycleNextWord();
-      break;
-    case "ArrowLeft":
-      e.preventDefault();
-      prevWord();
-      break;
   }
 }
 
-// Launch application on DOM ready
 window.addEventListener("DOMContentLoaded", init);
