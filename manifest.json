@@ -1,0 +1,19 @@
+{
+  "name": "Bilingual Artic & Phonology Tracker",
+  "short_name": "ArticTracker",
+  "description": "Offline-first clinical trial and phonological error tracking for pediatric speech-language pathology.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#0284c7",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
